@@ -10,11 +10,13 @@ from os.path import exists
 #Default values
 CONFIG_FILE="config.conf"
 SCREEN_X=1920
-SCREEN_Y=1200
+SCREEN_Y=1080
 CAMERA_X=1920
 CAMERA_Y=1080
-SCALE_X=720
-SCALE_Y=576
+SCALE_X=SCREEN_X/2  #720
+SCALE_Y=SCREEN_Y/2  #576
+SCALE_X_OLD=SCREEN_X/2  #720
+SCALE_Y_OLD=SCREEN_Y/2  #576
 CORNERS=[[68,19],[655,50],[70,500],[640,508]]
 MASK_COLORS=[0, 179, 0, 255, 0, 145, 1]
 MASK_COLORS_OLD=[0, 179, 0, 255, 0, 145, 1]
@@ -77,8 +79,12 @@ cap.set(3,CAMERA_X)
 cap.set(4,CAMERA_Y)
 
 def setTrackbarPos(x):
+    global SCALE_X
+    global SCALE_Y
     global MASK_COLORS
     try:
+        SCALE_X = cv2.getTrackbarPos("Scale X","Options")
+        SCALE_Y = cv2.getTrackbarPos("Scale Y","Options")
         MASK_COLORS[0] = cv2.getTrackbarPos("Hue Min","Options")
         MASK_COLORS[1] = cv2.getTrackbarPos("Hue Max","Options")
         MASK_COLORS[2] = cv2.getTrackbarPos("Sat Min","Options")
@@ -95,8 +101,16 @@ def setTrackbarPos(x):
 def Button_Reset(x):
     global MASK_COLORS
     global MASK_COLORS_OLD
+    global SCALE_X_OLD
+    global SCALE_X
+    global SCALE_Y_OLD
+    global SCALE_Y
     if(x == 1):
         MASK_COLORS=MASK_COLORS_OLD.copy()
+        SCALE_X = SCALE_X_OLD
+        SCALE_Y = SCALE_Y_OLD
+        cv2.setTrackbarPos("Scale X","Options", SCALE_X)
+        cv2.setTrackbarPos("Scale Y","Options", SCALE_Y)
         cv2.setTrackbarPos("Hue Min","Options", MASK_COLORS[0])
         cv2.setTrackbarPos("Hue Max","Options", MASK_COLORS[1])
         cv2.setTrackbarPos("Sat Min","Options", MASK_COLORS[2])
@@ -111,8 +125,16 @@ def Option_Colo_Open():
     cv2.destroyWindow("Options")
     global MASK_COLORS
     global MASK_COLORS_OLD
+    global SCALE_X_OLD
+    global SCALE_X
+    global SCALE_Y_OLD
+    global SCALE_Y
+    global CAMERA_X
+    global CAMERA_Y
     cv2.namedWindow("Options")
     cv2.resizeWindow("Options",300,240)
+    cv2.createTrackbar("Scale X","Options",SCALE_X,CAMERA_X, setTrackbarPos)
+    cv2.createTrackbar("Scale Y","Options",SCALE_Y,CAMERA_Y,setTrackbarPos)
     cv2.createTrackbar("Hue Min","Options",MASK_COLORS[0],255, setTrackbarPos)
     cv2.createTrackbar("Hue Max","Options",MASK_COLORS[1],255,setTrackbarPos)
     cv2.createTrackbar("Sat Min","Options", MASK_COLORS[2],255, setTrackbarPos)
@@ -122,6 +144,8 @@ def Option_Colo_Open():
     cv2.createTrackbar("Blur","Options",MASK_COLORS[6],20,setTrackbarPos)
     cv2.createTrackbar("Reset","Options",0,1,Button_Reset)
     MASK_COLORS_OLD=MASK_COLORS.copy()
+    SCALE_X_OLD = SCALE_X
+    SCALE_Y_OLD = SCALE_Y
 
 Calibrate_Status = 0
 def Calibrate_Points(x, y):
@@ -249,7 +273,7 @@ while Running:
     # text = ("Text")
     
 
-    cv2.imshow("Blobs Using Area", blobs)
+    cv2.imshow("Blobs", blobs)
 
     #cv2.imshow("Original",img)
     # cv2. imshow("HSV",imgHSV)
