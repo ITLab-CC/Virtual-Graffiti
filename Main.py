@@ -124,32 +124,47 @@ def Option_Colo_Open():
     MASK_COLORS_OLD=MASK_COLORS.copy()
 
 Calibrate_Status = 0
-def Calibrate_Points_Start():
+def Calibrate_Points(x, y):
+    global Calibrate_Status
+
     cal_imag = np.zeros((SCREEN_Y,SCREEN_X,3), np.uint8)
+
+    if Calibrate_Status == 1:
+        # print(str(x) + "<" + str(int(SCALE_X/2)) + " and " + str(y) + "<" + str(int(SCALE_Y/2)))
+        cv2.circle(cal_imag,(0,0), 50, (0,0,255), -1)
+        cv2.circle(cal_imag,(15,15), 15, (255,0,0), -1)
+        if((x < int(SCALE_X/2)) and (y < int(SCALE_Y/2))):
+            CORNERS[0][0] = x
+            CORNERS[0][1] = y
+            Calibrate_Status = 2
+    elif Calibrate_Status == 2:
+        cv2.circle(cal_imag,(SCREEN_X-1,0), 50, (0,0,255), -1)
+        cv2.circle(cal_imag,(SCREEN_X-16,15), 15, (255,0,0), -1)
+        if((x > int(SCALE_X/2)) and (y < int(SCALE_Y/2))):
+            CORNERS[1][0] = x
+            CORNERS[1][1] = y
+            Calibrate_Status = 3
+    elif Calibrate_Status == 3:
+        cv2.circle(cal_imag,(0,SCREEN_Y-1), 50, (0,0,255), -1)
+        cv2.circle(cal_imag,(15,SCREEN_Y-16), 15, (255,0,0), -1)
+        if((x < int(SCALE_X/2)) and (y > int(SCALE_Y/2))):
+            CORNERS[2][0] = x
+            CORNERS[2][1] = y
+            Calibrate_Status = 4
+    elif Calibrate_Status == 4:
+        cv2.circle(cal_imag,(SCREEN_X-1,SCREEN_Y-1), 50, (0,0,255), -1)
+        cv2.circle(cal_imag,(SCREEN_X-16,SCREEN_Y-16), 15, (255,0,0), -1)
+        if((x > int(SCALE_X/2)) and (y > int(SCALE_Y/2))):
+            CORNERS[3][0] = x
+            CORNERS[3][1] = y
+            Calibrate_Status = 0
+
     cv2.namedWindow("Calibrate", cv2.WINDOW_NORMAL)
     cv2.setWindowProperty("Calibrate",cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
     cv2.imshow("Calibrate", cal_imag)
-    global Calibrate_Status
-    Calibrate_Status = 1
-
-def Calibrate_Points():
-    global Calibrate_Status
-    Calibrate_Status %= 5
     if Calibrate_Status == 0:
-        return
-
-    cal_imag = np.zeros((SCREEN_Y,SCREEN_X,3), np.uint8)
-    if Calibrate_Status == 1:
-        cal_imag[0,0:20,20]
-    elif Calibrate_Status == 2:
-        cal_imag[SCREEN_X,0:20,20]
-    elif Calibrate_Status == 3:
-        cal_imag[0,SCREEN_Y:20,20]
-    elif Calibrate_Status == 4:
-        cal_imag[SCREEN_X,SCREEN_Y:20,20]
-
-    cv2.imshow("Calibrate", cal_imag)
-
+        SaveToJSON()
+        cv2.destroyWindow("Calibrate")
 
 
 
@@ -161,9 +176,14 @@ def keyinput(i):
     def quit():
         global Running
         Running = False
+    def calibrate():
+        global Calibrate_Status
+        if Calibrate_Status == 0:
+            Calibrate_Status = 1
+            Calibrate_Points(SCREEN_X,SCREEN_Y)
     switcher={
             111:Option_Colo_Open,
-            99:Calibrate_Points_Start,
+            99:calibrate,
             113:quit,
             }
     switcher.get(i,default)()
@@ -173,10 +193,11 @@ while Running:
     img = cv2.resize(img,(SCALE_X, SCALE_Y),interpolation=cv2.INTER_LINEAR)
     img = cv2.flip(img, 1)
 
-    pts1 = np.float32(CORNERS)
-    pts2 = np.float32([[0,0],[SCALE_X,0],[0,SCALE_Y],[SCALE_X,SCALE_Y]])
-    matrix = cv2.getPerspectiveTransform(pts1,pts2)
-    img = cv2.warpPerspective(img,matrix,(SCALE_X,SCALE_Y))
+    if Calibrate_Status > 0:
+        pts1 = np.float32(CORNERS)
+        pts2 = np.float32([[0,0],[SCALE_X,0],[0,SCALE_Y],[SCALE_X,SCALE_Y]])
+        matrix = cv2.getPerspectiveTransform(pts1,pts2)
+        img = cv2.warpPerspective(img,matrix,(SCALE_X,SCALE_Y))
 
     # cv2.imshow("Output",imgOutput)
 
@@ -221,6 +242,8 @@ while Running:
         y = int(p[1])
         text = str(x) + "|" + str(y)
         blobs = cv2.putText(blobs, text, (x+10,y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1, cv2.LINE_AA)
+        if Calibrate_Status > 0:
+            Calibrate_Points(x, y)
     # if()
     # print(pts[0][0])
     # text = ("Text")
