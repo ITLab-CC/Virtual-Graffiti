@@ -1,7 +1,10 @@
 ##!usr/bin/python3
 
 #Einbinden der Bibliotheken
-import time
+import cv2
+import numpy as np
+import subprocess
+import os
 import dbus
 import dbus.service
 import dbus.mainloop.glib
@@ -99,17 +102,54 @@ def mouse_abs(x, y, button):
 	mouse_move(0, 0, button)
 
 
-#Reset auf 0,0
+
+
+
+
+x_medium= 0
+y_medium=0
+
+# Maustaste zurücksetzen
+# subprocess.Popen(["./mouse/mouse_emulate.py"," 0 "," 0 "," 0 "," 0"])
 mouse_abs(0, 0, 0)
 
+cap = cv2.VideoCapture(0)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+print(cap.get(3), ",", cap.get(4))
 
-time.sleep(1)
-mouse_abs(500, 500, 0)
-time.sleep(1)
-mouse_abs(700, 700, 0)
-time.sleep(1)
-mouse_abs(25, 25, 0)
-time.sleep(1)
-mouse_abs(-10, -100, 0)
-time.sleep(1)
-mouse_abs(504000, 58937474, 0)
+#Schleife für dauerhafte Bildübertragung
+while 1:
+	_, frame  = cap.read()
+	hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+#Absteckung der Farberkennung
+	lower= np.array([0,0,255])
+	higher= np.array([255,255,255])
+
+#Erkennung des größten Blobs
+	mask = cv2.inRange(hsv_frame, lower, higher)
+	contours,_ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+	contours = sorted(contours, key=lambda x:cv2.contourArea(x), reverse=True)
+
+#Bestimmung der Mitte
+
+	for cnt in contours:
+		(x, y, w, h) = cv2.boundingRect(cnt)
+		x_medium = int(((x+x+w)/2))
+		y_medium = int(((y+y+h)/2))
+
+		x_medium = 1919 - x_medium
+		print(x_medium,",",y_medium)
+		mouse_abs(x_medium, y_medium, 1)
+		break
+	#mouse_move(0, 0, 1)
+#Testbild anzeigen
+	# cv2.imshow("Frame", frame)
+#Berechnung der Übergabevariablen
+	if cv2.waitKey(1) == ord("q"):
+		break
+
+#Beenden
+cap.release()
+cv2.destroyAllWindows()
