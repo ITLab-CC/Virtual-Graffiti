@@ -213,6 +213,8 @@ def keyinput(i):
             }
     switcher.get(i,default)()
 
+MOUSE_PRESSED = 0
+
 while Running:
     success, img = cap.read()
     img = cv2.resize(img,(SCALE_X, SCALE_Y),interpolation=cv2.INTER_LINEAR)
@@ -256,7 +258,19 @@ while Running:
             Calibrate_Points(x, y)
         else:
             mouse.move(x*(SCREEN_X/SCALE_X), y*(SCREEN_Y/SCALE_Y))
+            #if(mouse.is_pressed(button='left') == False):
+            if(MOUSE_PRESSED == 0):
+                print("press")
+                mouse.press(button='left')
+            MOUSE_PRESSED = 1
     
+    #if(mouse.is_pressed(button='left') and len(coordinates) == 0):
+    if(MOUSE_PRESSED > 0 and len(coordinates) == 0):
+        MOUSE_PRESSED +=1
+        if(MOUSE_PRESSED > 5):
+            print("release")
+            mouse.release(button='left')
+            MOUSE_PRESSED = 0
 
     cv2.imshow("Blobs", blobs)
 
