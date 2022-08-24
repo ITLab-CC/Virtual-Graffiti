@@ -1,11 +1,12 @@
-from contextlib import nullcontext
-from curses.ascii import NUL
-from sys import call_tracing
-from turtle import width
+#from contextlib import nullcontext
+#from curses.ascii import NUL
+#from sys import call_tracing
+#from turtle import width
 import cv2
 import numpy as np
 import json
 from os.path import exists
+import mouse
 
 #Default values
 CONFIG_FILE="config.conf"
@@ -122,7 +123,7 @@ def Button_Reset(x):
         print("Reseted to: ", MASK_COLORS[0],MASK_COLORS[1],MASK_COLORS[2],MASK_COLORS[3],MASK_COLORS[4],MASK_COLORS[5],MASK_COLORS[6])
 
 def Option_Colo_Open():
-    cv2.destroyWindow("Options")
+    #cv2.destroyWindow("Options")
     global MASK_COLORS
     global MASK_COLORS_OLD
     global SCALE_X_OLD
@@ -132,7 +133,7 @@ def Option_Colo_Open():
     global CAMERA_X
     global CAMERA_Y
     cv2.namedWindow("Options")
-    cv2.resizeWindow("Options",300,240)
+    cv2.resizeWindow("Options",300,600)
     cv2.createTrackbar("Scale X","Options",SCALE_X,CAMERA_X, setTrackbarPos)
     cv2.createTrackbar("Scale Y","Options",SCALE_Y,CAMERA_Y,setTrackbarPos)
     cv2.createTrackbar("Hue Min","Options",MASK_COLORS[0],255, setTrackbarPos)
@@ -225,8 +226,6 @@ while Running:
 
     # cv2.imshow("Output",imgOutput)
 
-
-
     imgHSV=cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
     #print(MASK_COLORS[0],MASK_COLORS[1],MASK_COLORS[2],MASK_COLORS[3],MASK_COLORS[4],MASK_COLORS[5],MASK_COLORS[6])
 
@@ -235,19 +234,6 @@ while Running:
     upper= np.array([MASK_COLORS[1],MASK_COLORS[3],MASK_COLORS[5]])
     mask = cv2.inRange(imgHSV, lower, upper)  
     blur = cv2.blur(mask, (MASK_COLORS[6],MASK_COLORS[6]), cv2.BORDER_DEFAULT)
-
-    # contours,hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-	# #contours = sorted(contours, key=lambda x:cv2.contourArea(x), reverse=True)
-
-    # #Bestimmung der Mitte
-    # for cnt in contours:
-    #     cv2.drawContours(mask,cnt,-1,(0,88,0),3)
-    #     print(cv2.contourArea(cnt))
-	# 	# (x, y, w, h) = cv2.boundingRect(cnt)
-	# 	# x_medium = int(((x+x+w)/2))
-	# 	# y_medium = int(((y+y+h)/2))
-
-    # detector = cv2.SimpleBlobDetector()
 
     # Detect blobs.
     params = cv2.SimpleBlobDetector_Params()
@@ -268,9 +254,8 @@ while Running:
         blobs = cv2.putText(blobs, text, (x+10,y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1, cv2.LINE_AA)
         if Calibrate_Status > 0:
             Calibrate_Points(x, y)
-    # if()
-    # print(pts[0][0])
-    # text = ("Text")
+        else:
+            mouse.move(x*(SCREEN_X/SCALE_X), y*(SCREEN_Y/SCALE_Y))
     
 
     cv2.imshow("Blobs", blobs)
@@ -280,7 +265,3 @@ while Running:
     #cv2.imshow("Mask", mask)
 
     keyinput(cv2.waitKey(1) & 0xFF)
-    # print(ord('q')) #113
-    # print(ord('o')) #111
-    # if cv2.waitKey(1) & 0xFF ==ord('q'):
-    #     break
