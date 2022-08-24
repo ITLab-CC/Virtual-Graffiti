@@ -158,29 +158,29 @@ def Calibrate_Points(x, y):
         cv2.circle(cal_imag,(0,0), 50, (0,0,255), -1)
         cv2.circle(cal_imag,(15,15), 15, (255,0,0), -1)
         if((x < int(SCALE_X/2)) and (y < int(SCALE_Y/2))):
-            CORNERS[0][0] = x
-            CORNERS[0][1] = y
+            CORNERS[0][0] = x-20
+            CORNERS[0][1] = y-20
             Calibrate_Status = 2
     elif Calibrate_Status == 2:
         cv2.circle(cal_imag,(SCREEN_X-1,0), 50, (0,0,255), -1)
         cv2.circle(cal_imag,(SCREEN_X-16,15), 15, (255,0,0), -1)
         if((x > int(SCALE_X/2)) and (y < int(SCALE_Y/2))):
-            CORNERS[1][0] = x
-            CORNERS[1][1] = y
+            CORNERS[1][0] = x+20
+            CORNERS[1][1] = y-20
             Calibrate_Status = 3
     elif Calibrate_Status == 3:
         cv2.circle(cal_imag,(0,SCREEN_Y-1), 50, (0,0,255), -1)
         cv2.circle(cal_imag,(15,SCREEN_Y-16), 15, (255,0,0), -1)
         if((x < int(SCALE_X/2)) and (y > int(SCALE_Y/2))):
-            CORNERS[2][0] = x
-            CORNERS[2][1] = y
+            CORNERS[2][0] = x-20
+            CORNERS[2][1] = y+20
             Calibrate_Status = 4
     elif Calibrate_Status == 4:
         cv2.circle(cal_imag,(SCREEN_X-1,SCREEN_Y-1), 50, (0,0,255), -1)
         cv2.circle(cal_imag,(SCREEN_X-16,SCREEN_Y-16), 15, (255,0,0), -1)
         if((x > int(SCALE_X/2)) and (y > int(SCALE_Y/2))):
-            CORNERS[3][0] = x
-            CORNERS[3][1] = y
+            CORNERS[3][0] = x+20
+            CORNERS[3][1] = y+20
             Calibrate_Status = 0
 
     cv2.namedWindow("Calibrate", cv2.WINDOW_NORMAL)
@@ -217,7 +217,7 @@ while Running:
     img = cv2.resize(img,(SCALE_X, SCALE_Y),interpolation=cv2.INTER_LINEAR)
     img = cv2.flip(img, 1)
 
-    if Calibrate_Status > 0:
+    if Calibrate_Status == 0:
         pts1 = np.float32(CORNERS)
         pts2 = np.float32([[0,0],[SCALE_X,0],[0,SCALE_Y],[SCALE_X,SCALE_Y]])
         matrix = cv2.getPerspectiveTransform(pts1,pts2)
