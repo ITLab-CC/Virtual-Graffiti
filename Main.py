@@ -130,7 +130,7 @@ def Button_Reset(x):
         cv2.setTrackbarPos("Reset","Options", 0)
         print("Reseted to: ", MASK_COLORS[0],MASK_COLORS[1],MASK_COLORS[2],MASK_COLORS[3],MASK_COLORS[4],MASK_COLORS[5],MASK_COLORS[6])
 
-def Option_Colo_Open():
+def Option_Colo_Open(_):
     if getWindowProperty("Options",WND_PROP_VISIBLE) > 0:
         cv2.destroyWindow("Options")
     global MASK_COLORS
@@ -210,17 +210,15 @@ def Calibrate_Points(x, y):
 # c = Calibration
 # d = Debug
 # q = Quit
-def default():
-    return
-def quit():
+def quit(_):
     global Running
     Running = False
-def calibrate():
+def calibrate(_):
     global Calibrate_Status
     if Calibrate_Status == 0:
         Calibrate_Status = 1
         Calibrate_Points(SCREEN_X,SCREEN_Y)
-def debug():
+def debug(_):
     global DEBUG
     if DEBUG == True:
         DEBUG = False
