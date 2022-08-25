@@ -3,7 +3,6 @@ import numpy as np
 import json
 from os.path import exists
 import mouse
-import keyboard
 
 #Default values. Will be loaded from config.conf file
 DEBUG = False
@@ -130,7 +129,7 @@ def Button_Reset(x):
         cv2.setTrackbarPos("Reset","Options", 0)
         print("Reseted to: ", MASK_COLORS[0],MASK_COLORS[1],MASK_COLORS[2],MASK_COLORS[3],MASK_COLORS[4],MASK_COLORS[5],MASK_COLORS[6])
 
-def Option_Colo_Open(_):
+def Option_Colo_Open():
     if getWindowProperty("Options",WND_PROP_VISIBLE) > 0:
         cv2.destroyWindow("Options")
     global MASK_COLORS
@@ -230,10 +229,10 @@ def keyinput(i):
             DEBUG = True
         SaveToJSON()
     switcher={
-            "o":Option_Colo_Open, # key 'o'
-            "c":calibrate, # key 'c'
-            "d":debug, # key 'd'
-            "q":quit, # key 'q'
+            111:Option_Colo_Open, # key 'o'
+            99:calibrate, # key 'c'
+            100:debug, # key 'd'
+            113:quit, # key 'q'
             }
     switcher.get(i,default)()
 
@@ -346,4 +345,4 @@ while Running:
         debug_img = stackImages(0.5,([blobs,imgHSV],[mask,blur]))
         cv2.imshow('Debug', debug_img)
 
-    keyinput(keyboard.read_key())
+    keyinput(cv2.waitKey(1) & 0xFF)
