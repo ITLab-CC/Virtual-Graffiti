@@ -237,6 +237,11 @@ def keyinput(i):
 
 
 
+def concat_tile(im_list_2d):
+    return cv2.vconcat([cv2.hconcat(im_list_h) for im_list_h in im_list_2d])
+
+
+
 #----------------------------------------------------------------#
 #Start
 #----------------------------------------------------------------#
@@ -308,9 +313,8 @@ while Running:
 
     # If debug mode is enabled, print image
     if DEBUG == True:
-        v_img = cv2.vconcat([blobs, imgHSV])
-        v2_img = cv2.vconcat([mask, blur])
-        debug_img = cv2.hconcat([v_img, v2_img])
+        debug_img = concat_tile([[blobs, imgHSV],
+                       [mask, blur]])
         cv2.imshow('Debug', debug_img)
 
     keyinput(cv2.waitKey(1) & 0xFF)
