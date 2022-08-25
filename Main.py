@@ -4,7 +4,7 @@ import json
 from os.path import exists
 import mouse
 
-#Default values
+#Default values. Will be loaded from config.conf file
 DEBUG = FALSE
 CONFIG_FILE="config.conf"
 SCREEN_X=1920
@@ -19,6 +19,9 @@ CORNERS=[[68,19],[655,50],[70,500],[640,508]]
 MASK_COLORS=[0, 179, 0, 255, 0, 145, 1]
 MASK_COLORS_OLD=[0, 179, 0, 255, 0, 145, 1]
 
+
+
+#Save vars to config.conf file
 def SaveToJSON():
     global DEBUG
     global SCREEN_X
@@ -46,6 +49,7 @@ def SaveToJSON():
     with open(CONFIG_FILE, 'w') as outfile:
         json.dump(data, outfile)
 
+#Load vars from config.conf file
 def LoadFromJSON():
     global DEBUG
     global SCREEN_X
@@ -74,12 +78,9 @@ def LoadFromJSON():
     except:
         print("The config has a wrong format. Delete the file and a new one will be generated")
 
-LoadFromJSON()
 
-cap = cv2.VideoCapture(0)
-cap.set(3,CAMERA_X)
-cap.set(4,CAMERA_Y)
 
+#Options menu
 def setTrackbarPos(x):
     global SCALE_X
     global SCALE_Y
@@ -100,6 +101,7 @@ def setTrackbarPos(x):
         SaveToJSON()
     except:
         return;
+
 def Button_Reset(x):
     global MASK_COLORS
     global MASK_COLORS_OLD
@@ -150,6 +152,9 @@ def Option_Colo_Open():
     SCALE_X_OLD = SCALE_X
     SCALE_Y_OLD = SCALE_Y
 
+
+
+#Calibration mode
 Calibrate_Status = 0
 def Calibrate_Points(x, y):
     global Calibrate_Status
@@ -194,8 +199,12 @@ def Calibrate_Points(x, y):
 
 
 
-Running = True
 
+#Switch case for key input
+# o = Option
+# c = Calibration
+# d = Debug
+# q = Quit
 def keyinput(i):
     def default():
         return
@@ -222,14 +231,26 @@ def keyinput(i):
             }
     switcher.get(i,default)()
 
+
+
+#----------------------------------------------------------------#
+#Start
+#----------------------------------------------------------------#
+LoadFromJSON() # Load from config.conf file
+
+cap = cv2.VideoCapture(0) # Set camera input
+# Set img size of camera (x,y)
+cap.set(3,CAMERA_X)
+cap.set(4,CAMERA_Y)
+
 MOUSE_PRESSED = 0
-
+Running = True
 while Running:
-    success, img = cap.read()
-    img = cv2.resize(img,(SCALE_X, SCALE_Y),interpolation=cv2.INTER_LINEAR)
-    img = cv2.flip(img, 1)
+    success, img = cap.read() # Read img
+    img = cv2.resize(img,(SCALE_X, SCALE_Y),interpolation=cv2.INTER_LINEAR) # Resize image
+    img = cv2.flip(img, 1) # Mirror image
 
-    #Warp img
+    #Warp image
     if Calibrate_Status == 0:
         pts1 = np.float32(CORNERS)
         pts2 = np.float32([[0,0],[SCALE_X,0],[0,SCALE_Y],[SCALE_X,SCALE_Y]])
@@ -249,28 +270,31 @@ while Running:
     params.minArea = 100
     detector = cv2.SimpleBlobDetector_create(params)
     keypoints = detector.detect(blur)
-    if DEBUG == True:
+    if DEBUG == True: # Draw the keypoints in image
         blank = np.zeros((1, 1))
         blobs = cv2.drawKeypoints(img, keypoints, blank, (0, 0, 255),cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
-    coordinates = cv2.KeyPoint_convert(keypoints)
-    pts = np.asarray([[p[0], p[1]] for p in coordinates])
+    coordinates = cv2.KeyPoint_convert(keypoints) # convert keypoints to coordinates
+    # For each blob 
     for p in coordinates:
         x = int(p[0])
         y = int(p[1])
-        if DEBUG == True:
+        if DEBUG == True: # Write cordinates to the blob in the image
             text = str(x) + "|" + str(y)
             blobs = cv2.putText(blobs, text, (x+10,y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1, cv2.LINE_AA)
+
+        # If calibration mode is enabled
         if Calibrate_Status > 0:
             Calibrate_Points(x, y)
         else:
+            # Move mouse cursor to position
             mouse.move(x*(SCREEN_X/SCALE_X), y*(SCREEN_Y/SCALE_Y))
-            if(MOUSE_PRESSED == 0):
+            if(MOUSE_PRESSED == 0): # Press mouse button if mouse is not pressed
                 print("press")
                 mouse.press(button='left')
             MOUSE_PRESSED = 1
     
-    #if(mouse.is_pressed(button='left') and len(coordinates) == 0):
+    # If mouse is pressed and no blob is detected for 5 times then release mouse
     if(MOUSE_PRESSED > 0 and len(coordinates) == 0):
         MOUSE_PRESSED +=1
         if(MOUSE_PRESSED > 5):
@@ -278,6 +302,7 @@ while Running:
             mouse.release(button='left')
             MOUSE_PRESSED = 0
 
+    # If debug mode is enabled, print image
     if DEBUG == True:
         cv2.imshow("Original",img)
         cv2.imshow("Blobs", blobs)
