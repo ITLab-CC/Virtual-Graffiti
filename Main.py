@@ -3,7 +3,6 @@ import numpy as np
 import json
 from os.path import exists
 import mouse
-import keyboard
 
 #Default values. Will be loaded from config.conf file
 DEBUG = False
@@ -131,8 +130,8 @@ def Button_Reset(x):
         print("Reseted to: ", MASK_COLORS[0],MASK_COLORS[1],MASK_COLORS[2],MASK_COLORS[3],MASK_COLORS[4],MASK_COLORS[5],MASK_COLORS[6])
 
 def Option_Colo_Open():
-    #if cv2.getWindowProperty("Options",WND_PROP_VISIBLE) > 0:
-    #    cv2.destroyWindow("Options")
+    if getWindowProperty("Options",WND_PROP_VISIBLE) > 0:
+        cv2.destroyWindow("Options")
     global MASK_COLORS
     global MASK_COLORS_OLD
     global SCALE_X_OLD
@@ -210,16 +209,18 @@ def Calibrate_Points(x, y):
 # c = Calibration
 # d = Debug
 # q = Quit
-def keyinput():
-    if keyboard.is_pressed("q"):
+def keyinput(i):
+    def default():
+        return
+    def quit():
         global Running
         Running = False
-    elif keyboard.is_pressed("c"):
+    def calibrate():
         global Calibrate_Status
         if Calibrate_Status == 0:
             Calibrate_Status = 1
             Calibrate_Points(SCREEN_X,SCREEN_Y)
-    elif keyboard.is_pressed("d"):
+    def debug():
         global DEBUG
         if DEBUG == True:
             DEBUG = False
@@ -227,8 +228,13 @@ def keyinput():
         else:
             DEBUG = True
         SaveToJSON()
-    elif keyboard.is_pressed("o"):
-        Option_Colo_Open()
+    switcher={
+            111:Option_Colo_Open, # key 'o'
+            99:calibrate, # key 'c'
+            100:debug, # key 'd'
+            113:quit, # key 'q'
+            }
+    switcher.get(i,default)()
 
 
 
@@ -339,4 +345,4 @@ while Running:
         debug_img = stackImages(0.5,([blobs,imgHSV],[mask,blur]))
         cv2.imshow('Debug', debug_img)
 
-    keyinput()
+    keyinput(cv2.waitKey(1) & 0xFF)
