@@ -308,15 +308,10 @@ while Running:
 
     # If debug mode is enabled, print image
     if DEBUG == True:
-        v_img = cv2.vconcat([blobs, imgHSV, cv2.hconcat([mask, blur])])
-        # h_img = cv2.hconcat([mask, blur])
-        cv2.imshow('Horizontal', h_img)
-        #cv2.imshow('Vertical', v_img)
-        #cv2.imshow("Original",img)
-        # cv2.imshow("Blobs", blobs)
-        # cv2.imshow("HSV",imgHSV)
-        # cv2.imshow("Mask", mask)
-        # cv2.imshow("Blur", blur)
+        v_img = cv2.vconcat([blobs, imgHSV])
+        v2_img = cv2.vconcat([mask, blur])
+        debug_img = cv2.hconcat([v_img, v2_img])
+        cv2.imshow('Debug', debug_img)
 
     keyinput(cv2.waitKey(1) & 0xFF)
 
