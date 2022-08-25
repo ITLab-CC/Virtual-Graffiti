@@ -237,8 +237,9 @@ def keyinput(i):
 
 
 
-def concat_tile(im_list_2d):
-    return cv2.vconcat([cv2.hconcat(im_list_h) for im_list_h in im_list_2d])
+def concat_tile(im_list_2d, interpolation=cv2.INTER_CUBIC):
+    im_list_v = [hconcat_resize_min(im_list_h, interpolation=cv2.INTER_CUBIC) for im_list_h in im_list_2d]
+    return vconcat_resize_min(im_list_v, interpolation=cv2.INTER_CUBIC)
 
 
 
