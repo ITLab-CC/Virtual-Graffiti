@@ -341,9 +341,6 @@ while Running:
 
     # If debug mode is enabled, print image
     if DEBUG == True:
-        # img1 = np.concatenate((blobs, imgHSV), axis=1) 
-        # img2 = np.concatenate((mask, blur), axis=1) 
-        # debug_img = np.concatenate((img1, img2), axis=0) 
         debug_img = stackImages(0.5,([blobs,imgHSV],[mask,blur]))
         cv2.imshow('Debug', debug_img)
 
