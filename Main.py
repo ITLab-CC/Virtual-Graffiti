@@ -3,6 +3,7 @@ import numpy as np
 import json
 from os.path import exists
 import mouse
+import keyboard
 
 #Default values. Will be loaded from config.conf file
 DEBUG = False
@@ -209,32 +210,28 @@ def Calibrate_Points(x, y):
 # c = Calibration
 # d = Debug
 # q = Quit
-def keyinput(i):
-    def default():
-        return
-    def quit():
-        global Running
-        Running = False
-    def calibrate():
-        global Calibrate_Status
-        if Calibrate_Status == 0:
-            Calibrate_Status = 1
-            Calibrate_Points(SCREEN_X,SCREEN_Y)
-    def debug():
-        global DEBUG
-        if DEBUG == True:
-            DEBUG = False
-            cv2.destroyAllWindows()
-        else:
-            DEBUG = True
-        SaveToJSON()
-    switcher={
-            111:Option_Colo_Open, # key 'o'
-            99:calibrate, # key 'c'
-            100:debug, # key 'd'
-            113:quit, # key 'q'
-            }
-    switcher.get(i,default)()
+def default():
+    return
+def quit():
+    global Running
+    Running = False
+def calibrate():
+    global Calibrate_Status
+    if Calibrate_Status == 0:
+        Calibrate_Status = 1
+        Calibrate_Points(SCREEN_X,SCREEN_Y)
+def debug():
+    global DEBUG
+    if DEBUG == True:
+        DEBUG = False
+        cv2.destroyAllWindows()
+    else:
+        DEBUG = True
+    SaveToJSON()
+keyboard.on_press_key("o", Option_Colo_Open)
+keyboard.on_press_key("c", calibrate)
+keyboard.on_press_key("d", debug)
+keyboard.on_press_key("q", quit)
 
 
 
@@ -344,5 +341,3 @@ while Running:
     if DEBUG == True:
         debug_img = stackImages(0.5,([blobs,imgHSV],[mask,blur]))
         cv2.imshow('Debug', debug_img)
-
-    keyinput(cv2.waitKey(1) & 0xFF)
