@@ -210,18 +210,16 @@ def Calibrate_Points(x, y):
 # c = Calibration
 # d = Debug
 # q = Quit
-def keyinput(i):
-    def default():
-        return
-    def quit():
+def keyinput():
+    if keyboard.is_pressed("q"):
         global Running
         Running = False
-    def calibrate():
+    elif keyboard.is_pressed("c"):
         global Calibrate_Status
         if Calibrate_Status == 0:
             Calibrate_Status = 1
             Calibrate_Points(SCREEN_X,SCREEN_Y)
-    def debug():
+    elif keyboard.is_pressed("d"):
         global DEBUG
         if DEBUG == True:
             DEBUG = False
@@ -229,13 +227,8 @@ def keyinput(i):
         else:
             DEBUG = True
         SaveToJSON()
-    switcher={
-            'o':Option_Colo_Open, # key 'o'
-            'c':calibrate, # key 'c'
-            'd':debug, # key 'd'
-            'q':quit, # key 'q'
-            }
-    switcher.get(i,default)()
+    elif keyboard.is_pressed("o"):
+        Option_Colo_Open()
 
 
 
@@ -346,4 +339,4 @@ while Running:
         debug_img = stackImages(0.5,([blobs,imgHSV],[mask,blur]))
         cv2.imshow('Debug', debug_img)
 
-    keyinput(keyboard.read_key())
+    keyinput()
