@@ -5,20 +5,22 @@ from os.path import exists
 import mouse
 
 #Default values
+DEBUG = FALSE
 CONFIG_FILE="config.conf"
 SCREEN_X=1920
 SCREEN_Y=1080
 CAMERA_X=1920
 CAMERA_Y=1080
-SCALE_X=SCREEN_X/2  #720
-SCALE_Y=SCREEN_Y/2  #576
-SCALE_X_OLD=SCREEN_X/2  #720
-SCALE_Y_OLD=SCREEN_Y/2  #576
+SCALE_X=SCREEN_X/2
+SCALE_Y=SCREEN_Y/2
+SCALE_X_OLD=SCALE_X
+SCALE_Y_OLD=SCALE_Y
 CORNERS=[[68,19],[655,50],[70,500],[640,508]]
 MASK_COLORS=[0, 179, 0, 255, 0, 145, 1]
 MASK_COLORS_OLD=[0, 179, 0, 255, 0, 145, 1]
 
 def SaveToJSON():
+    global DEBUG
     global SCREEN_X
     global SCREEN_Y
     global CAMERA_X
@@ -30,6 +32,7 @@ def SaveToJSON():
     global CONFIG_FILE
     data = {
         'config' : {
+            'DEBUG': DEBUG,
             'SCREEN_X' : SCREEN_X,
             'SCREEN_Y' : SCREEN_Y,
             'CAMERA_X' : CAMERA_X,
@@ -44,6 +47,7 @@ def SaveToJSON():
         json.dump(data, outfile)
 
 def LoadFromJSON():
+    global DEBUG
     global SCREEN_X
     global SCREEN_Y
     global CAMERA_X
@@ -58,6 +62,7 @@ def LoadFromJSON():
     try:
         with open(CONFIG_FILE) as json_file:
             data = json.load(json_file)
+            DEBUG = data['config']['DEBUG']
             SCREEN_X = data['config']['SCREEN_X']
             SCREEN_Y = data['config']['SCREEN_Y']
             CAMERA_X = data['config']['CAMERA_X']
@@ -119,7 +124,8 @@ def Button_Reset(x):
         print("Reseted to: ", MASK_COLORS[0],MASK_COLORS[1],MASK_COLORS[2],MASK_COLORS[3],MASK_COLORS[4],MASK_COLORS[5],MASK_COLORS[6])
 
 def Option_Colo_Open():
-    #cv2.destroyWindow("Options")
+    if getWindowProperty("Options",WND_PROP_VISIBLE) > 0:
+        cv2.destroyWindow("Options")
     global MASK_COLORS
     global MASK_COLORS_OLD
     global SCALE_X_OLD
@@ -151,7 +157,6 @@ def Calibrate_Points(x, y):
     cal_imag = np.zeros((SCREEN_Y,SCREEN_X,3), np.uint8)
 
     if Calibrate_Status == 1:
-        # print(str(x) + "<" + str(int(SCALE_X/2)) + " and " + str(y) + "<" + str(int(SCALE_Y/2)))
         cv2.circle(cal_imag,(0,0), 50, (0,0,255), -1)
         cv2.circle(cal_imag,(15,15), 15, (255,0,0), -1)
         if((x < int(SCALE_X/2)) and (y < int(SCALE_Y/2))):
@@ -202,10 +207,18 @@ def keyinput(i):
         if Calibrate_Status == 0:
             Calibrate_Status = 1
             Calibrate_Points(SCREEN_X,SCREEN_Y)
+    def debug():
+        global DEBUG
+        if DEBUG == True:
+            DEBUG = False
+            cv2.destroyAllWindows()
+        else
+            DEBUG = True
     switcher={
-            111:Option_Colo_Open,
-            99:calibrate,
-            113:quit,
+            111:Option_Colo_Open, # key 'o'
+            99:calibrate, # key 'c'
+            100:debug, # key 'd'
+            113:quit, # key 'q'
             }
     switcher.get(i,default)()
 
@@ -216,18 +229,15 @@ while Running:
     img = cv2.resize(img,(SCALE_X, SCALE_Y),interpolation=cv2.INTER_LINEAR)
     img = cv2.flip(img, 1)
 
+    #Warp img
     if Calibrate_Status == 0:
         pts1 = np.float32(CORNERS)
         pts2 = np.float32([[0,0],[SCALE_X,0],[0,SCALE_Y],[SCALE_X,SCALE_Y]])
         matrix = cv2.getPerspectiveTransform(pts1,pts2)
         img = cv2.warpPerspective(img,matrix,(SCALE_X,SCALE_Y))
 
-    # cv2.imshow("Output",imgOutput)
-
+    #HSV mask
     imgHSV=cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
-    #print(MASK_COLORS[0],MASK_COLORS[1],MASK_COLORS[2],MASK_COLORS[3],MASK_COLORS[4],MASK_COLORS[5],MASK_COLORS[6])
-
-
     lower = np.array([MASK_COLORS[0],MASK_COLORS[2],MASK_COLORS[4]])
     upper= np.array([MASK_COLORS[1],MASK_COLORS[3],MASK_COLORS[5]])
     mask = cv2.inRange(imgHSV, lower, upper)  
@@ -239,22 +249,22 @@ while Running:
     params.minArea = 100
     detector = cv2.SimpleBlobDetector_create(params)
     keypoints = detector.detect(blur)
-    blank = np.zeros((1, 1))
-    blobs = cv2.drawKeypoints(img, keypoints, blank, (0, 0, 255),cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    if DEBUG == True:
+        blank = np.zeros((1, 1))
+        blobs = cv2.drawKeypoints(img, keypoints, blank, (0, 0, 255),cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
     coordinates = cv2.KeyPoint_convert(keypoints)
-    #print(coordinates)
     pts = np.asarray([[p[0], p[1]] for p in coordinates])
     for p in coordinates:
         x = int(p[0])
         y = int(p[1])
-        text = str(x) + "|" + str(y)
-        blobs = cv2.putText(blobs, text, (x+10,y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1, cv2.LINE_AA)
+        if DEBUG == True:
+            text = str(x) + "|" + str(y)
+            blobs = cv2.putText(blobs, text, (x+10,y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1, cv2.LINE_AA)
         if Calibrate_Status > 0:
             Calibrate_Points(x, y)
         else:
             mouse.move(x*(SCREEN_X/SCALE_X), y*(SCREEN_Y/SCALE_Y))
-            #if(mouse.is_pressed(button='left') == False):
             if(MOUSE_PRESSED == 0):
                 print("press")
                 mouse.press(button='left')
@@ -268,10 +278,11 @@ while Running:
             mouse.release(button='left')
             MOUSE_PRESSED = 0
 
-    cv2.imshow("Blobs", blobs)
-
-    #cv2.imshow("Original",img)
-    # cv2. imshow("HSV",imgHSV)
-    #cv2.imshow("Mask", mask)
+    if DEBUG == True:
+        cv2.imshow("Original",img)
+        cv2.imshow("Blobs", blobs)
+        cv2.imshow("HSV",imgHSV)
+        cv2.imshow("Mask", mask)
+        cv2.imshow("Blur", blur)
 
     keyinput(cv2.waitKey(1) & 0xFF)
