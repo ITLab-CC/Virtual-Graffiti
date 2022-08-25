@@ -3,6 +3,7 @@ import numpy as np
 import json
 from os.path import exists
 import mouse
+import keyboard
 
 #Default values. Will be loaded from config.conf file
 DEBUG = False
@@ -229,10 +230,10 @@ def keyinput(i):
             DEBUG = True
         SaveToJSON()
     switcher={
-            111:Option_Colo_Open, # key 'o'
-            99:calibrate, # key 'c'
-            100:debug, # key 'd'
-            113:quit, # key 'q'
+            'o':Option_Colo_Open, # key 'o'
+            'c':calibrate, # key 'c'
+            'd':debug, # key 'd'
+            'q':quit, # key 'q'
             }
     switcher.get(i,default)()
 
@@ -345,4 +346,4 @@ while Running:
         debug_img = stackImages(0.5,([blobs,imgHSV],[mask,blur]))
         cv2.imshow('Debug', debug_img)
 
-    keyinput(cv2.waitKey(1) & 0xFF)
+    keyinput(keyboard.read_key())
