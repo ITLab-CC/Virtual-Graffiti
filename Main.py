@@ -5,19 +5,19 @@ from os.path import exists
 import mouse
 
 #Default values. Will be loaded from config.conf file
-DEBUG = FALSE
+DEBUG = False
 CONFIG_FILE="config.conf"
 SCREEN_X=1920
 SCREEN_Y=1080
 CAMERA_X=1920
 CAMERA_Y=1080
-SCALE_X=SCREEN_X/2
-SCALE_Y=SCREEN_Y/2
+SCALE_X=int(SCREEN_X/2)
+SCALE_Y=int(SCREEN_Y/2)
 SCALE_X_OLD=SCALE_X
 SCALE_Y_OLD=SCALE_Y
-CORNERS=[[68,19],[655,50],[70,500],[640,508]]
+CORNERS=[[77, 7], [897, 25], [81, 501], [870, 517]]
 MASK_COLORS=[0, 179, 0, 255, 0, 145, 1]
-MASK_COLORS_OLD=[0, 179, 0, 255, 0, 145, 1]
+MASK_COLORS_OLD=MASK_COLORS
 
 
 
@@ -221,7 +221,7 @@ def keyinput(i):
         if DEBUG == True:
             DEBUG = False
             cv2.destroyAllWindows()
-        else
+        else:
             DEBUG = True
     switcher={
             111:Option_Colo_Open, # key 'o'
@@ -290,7 +290,7 @@ while Running:
             # Move mouse cursor to position
             mouse.move(x*(SCREEN_X/SCALE_X), y*(SCREEN_Y/SCALE_Y))
             if(MOUSE_PRESSED == 0): # Press mouse button if mouse is not pressed
-                print("press")
+                #print("press")
                 mouse.press(button='left')
             MOUSE_PRESSED = 1
     
@@ -298,7 +298,7 @@ while Running:
     if(MOUSE_PRESSED > 0 and len(coordinates) == 0):
         MOUSE_PRESSED +=1
         if(MOUSE_PRESSED > 5):
-            print("release")
+            #print("release")
             mouse.release(button='left')
             MOUSE_PRESSED = 0
 
