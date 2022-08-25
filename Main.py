@@ -131,8 +131,8 @@ def Button_Reset(x):
         print("Reseted to: ", MASK_COLORS[0],MASK_COLORS[1],MASK_COLORS[2],MASK_COLORS[3],MASK_COLORS[4],MASK_COLORS[5],MASK_COLORS[6])
 
 def Option_Colo_Open():
-    if cv2.getWindowProperty("Options",WND_PROP_VISIBLE) > 0:
-        cv2.destroyWindow("Options")
+    #if cv2.getWindowProperty("Options",WND_PROP_VISIBLE) > 0:
+    #    cv2.destroyWindow("Options")
     global MASK_COLORS
     global MASK_COLORS_OLD
     global SCALE_X_OLD
