@@ -227,6 +227,7 @@ def keyinput(i):
             cv2.destroyAllWindows()
         else:
             DEBUG = True
+        SaveToJSON()
     switcher={
             111:Option_Colo_Open, # key 'o'
             99:calibrate, # key 'c'
