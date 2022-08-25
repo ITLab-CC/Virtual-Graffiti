@@ -218,11 +218,11 @@ def keyinput(i):
             Calibrate_Points(SCREEN_X,SCREEN_Y)
     def debug():
         global DEBUG
-        if DEBUG == True:
-            DEBUG = False
+        if DEBUG == true:
+            DEBUG = false
             cv2.destroyAllWindows()
         else:
-            DEBUG = True
+            DEBUG = true
     switcher={
             111:Option_Colo_Open, # key 'o'
             99:calibrate, # key 'c'
@@ -270,7 +270,7 @@ while Running:
     params.minArea = 100
     detector = cv2.SimpleBlobDetector_create(params)
     keypoints = detector.detect(blur)
-    if DEBUG == True: # Draw the keypoints in image
+    if DEBUG == true: # Draw the keypoints in image
         blank = np.zeros((1, 1))
         blobs = cv2.drawKeypoints(img, keypoints, blank, (0, 0, 255),cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
@@ -279,7 +279,7 @@ while Running:
     for p in coordinates:
         x = int(p[0])
         y = int(p[1])
-        if DEBUG == True: # Write cordinates to the blob in the image
+        if DEBUG == true: # Write cordinates to the blob in the image
             text = str(x) + "|" + str(y)
             blobs = cv2.putText(blobs, text, (x+10,y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1, cv2.LINE_AA)
 
@@ -303,7 +303,7 @@ while Running:
             MOUSE_PRESSED = 0
 
     # If debug mode is enabled, print image
-    if DEBUG == True:
+    if DEBUG == true:
         cv2.imshow("Original",img)
         cv2.imshow("Blobs", blobs)
         cv2.imshow("HSV",imgHSV)
