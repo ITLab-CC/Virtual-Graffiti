@@ -130,31 +130,30 @@ def Button_Reset(x):
         print("Reseted to: ", MASK_COLORS[0],MASK_COLORS[1],MASK_COLORS[2],MASK_COLORS[3],MASK_COLORS[4],MASK_COLORS[5],MASK_COLORS[6])
 
 def Option_Colo_Open():
-    if getWindowProperty("Options",WND_PROP_VISIBLE) > 0:
-        cv2.destroyWindow("Options")
-    global MASK_COLORS
-    global MASK_COLORS_OLD
-    global SCALE_X_OLD
-    global SCALE_X
-    global SCALE_Y_OLD
-    global SCALE_Y
-    global CAMERA_X
-    global CAMERA_Y
-    cv2.namedWindow("Options")
-    cv2.resizeWindow("Options",300,600)
-    cv2.createTrackbar("Scale X","Options",SCALE_X,CAMERA_X, setTrackbarPos)
-    cv2.createTrackbar("Scale Y","Options",SCALE_Y,CAMERA_Y,setTrackbarPos)
-    cv2.createTrackbar("Hue Min","Options",MASK_COLORS[0],255, setTrackbarPos)
-    cv2.createTrackbar("Hue Max","Options",MASK_COLORS[1],255,setTrackbarPos)
-    cv2.createTrackbar("Sat Min","Options", MASK_COLORS[2],255, setTrackbarPos)
-    cv2.createTrackbar("Sat Max","Options",MASK_COLORS[3],255,setTrackbarPos)
-    cv2.createTrackbar("Val Min","Options",MASK_COLORS[4],255, setTrackbarPos)
-    cv2.createTrackbar("Val Max","Options",MASK_COLORS[5],255,setTrackbarPos)
-    cv2.createTrackbar("Blur","Options",MASK_COLORS[6],20,setTrackbarPos)
-    cv2.createTrackbar("Reset","Options",0,1,Button_Reset)
-    MASK_COLORS_OLD=MASK_COLORS.copy()
-    SCALE_X_OLD = SCALE_X
-    SCALE_Y_OLD = SCALE_Y
+    if getWindowProperty("Options",WND_PROP_VISIBLE) <= 0:
+        global MASK_COLORS
+        global MASK_COLORS_OLD
+        global SCALE_X_OLD
+        global SCALE_X
+        global SCALE_Y_OLD
+        global SCALE_Y
+        global CAMERA_X
+        global CAMERA_Y
+        cv2.namedWindow("Options")
+        cv2.resizeWindow("Options",300,600)
+        cv2.createTrackbar("Scale X","Options",SCALE_X,CAMERA_X, setTrackbarPos)
+        cv2.createTrackbar("Scale Y","Options",SCALE_Y,CAMERA_Y,setTrackbarPos)
+        cv2.createTrackbar("Hue Min","Options",MASK_COLORS[0],255, setTrackbarPos)
+        cv2.createTrackbar("Hue Max","Options",MASK_COLORS[1],255,setTrackbarPos)
+        cv2.createTrackbar("Sat Min","Options", MASK_COLORS[2],255, setTrackbarPos)
+        cv2.createTrackbar("Sat Max","Options",MASK_COLORS[3],255,setTrackbarPos)
+        cv2.createTrackbar("Val Min","Options",MASK_COLORS[4],255, setTrackbarPos)
+        cv2.createTrackbar("Val Max","Options",MASK_COLORS[5],255,setTrackbarPos)
+        cv2.createTrackbar("Blur","Options",MASK_COLORS[6],20,setTrackbarPos)
+        cv2.createTrackbar("Reset","Options",0,1,Button_Reset)
+        MASK_COLORS_OLD=MASK_COLORS.copy()
+        SCALE_X_OLD = SCALE_X
+        SCALE_Y_OLD = SCALE_Y
 
 
 
