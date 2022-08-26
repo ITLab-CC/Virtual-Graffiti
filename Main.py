@@ -328,8 +328,8 @@ while Running:
     coordinates = cv2.KeyPoint_convert(keypoints) # convert keypoints to coordinates
     # For each blob 
     for p in coordinates:
-        x = SCREEN_X-int(p[0])-1
-        y = SCREEN_Y-int(p[1])-1
+        x = SCALE_X-int(p[0])-1
+        y = SCALE_Y-int(p[1])-1
         if DEBUG == True: # Write cordinates to the blob in the image
             text = str(x*SCALE_FACTOR_X) + "|" + str(y*SCALE_FACTOR_Y)
             blobs = cv2.putText(blobs, text, (x+10,y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1, cv2.LINE_AA)
