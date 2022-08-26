@@ -15,6 +15,8 @@ SCALE_X=int(SCREEN_X/2)
 SCALE_Y=int(SCREEN_Y/2)
 SCALE_X_OLD=SCALE_X
 SCALE_Y_OLD=SCALE_Y
+SCALE_FACTOR_X = SCREEN_X/SCALE_X
+SCALE_FACTOR_Y = SCREEN_Y/SCALE_Y
 CORNERS=[[77, 7], [897, 25], [81, 501], [870, 517]]
 MASK_COLORS=[0, 179, 0, 255, 0, 145, 1]
 MASK_COLORS_OLD=MASK_COLORS
@@ -61,6 +63,8 @@ def LoadFromJSON():
     global CORNERS
     global MASK_COLORS
     global CONFIG_FILE
+    global SCALE_FACTOR_X
+    global SCALE_FACTOR_Y
     if not exists(CONFIG_FILE):
         SaveToJSON()
     try:
@@ -79,6 +83,8 @@ def LoadFromJSON():
             SCALE_Y = data['config']['SCALE_Y']
             CORNERS = data['config']['CORNERS']
             MASK_COLORS = data['config']['MASK_COLORS']
+            SCALE_FACTOR_X = SCREEN_X/SCALE_X
+            SCALE_FACTOR_Y = SCREEN_Y/SCALE_Y
     except:
         print("The config has a wrong format. Delete the file and a new one will be generated")
 
@@ -89,6 +95,8 @@ def setTrackbarPos(x):
     global SCALE_X
     global SCALE_Y
     global MASK_COLORS
+    global SCALE_FACTOR_X
+    global SCALE_FACTOR_Y
     try:
         SCALE_X = cv2.getTrackbarPos("Scale X","Options")
         SCALE_Y = cv2.getTrackbarPos("Scale Y","Options")
@@ -103,6 +111,8 @@ def setTrackbarPos(x):
             cv2.setTrackbarPos("Blur","Options", 1)
             MASK_COLORS[6] = 1
         SaveToJSON()
+        SCALE_FACTOR_X = SCREEN_X/SCALE_X
+        SCALE_FACTOR_Y = SCREEN_Y/SCALE_Y
     except:
         return;
 
@@ -129,6 +139,7 @@ def Button_Reset(x):
         cv2.setTrackbarPos("Reset","Options", 0)
         print("Reseted to: ", MASK_COLORS[0],MASK_COLORS[1],MASK_COLORS[2],MASK_COLORS[3],MASK_COLORS[4],MASK_COLORS[5],MASK_COLORS[6])
 
+# Open/Create options menu
 def Option_Colo_Open():
     if cv2.getWindowProperty("Options",cv2.WND_PROP_VISIBLE) <= 0:
         global MASK_COLORS
@@ -299,7 +310,10 @@ while Running:
     lower = np.array([MASK_COLORS[0],MASK_COLORS[2],MASK_COLORS[4]])
     upper= np.array([MASK_COLORS[1],MASK_COLORS[3],MASK_COLORS[5]])
     mask = cv2.inRange(imgHSV, lower, upper)  
-    blur = cv2.blur(mask, (MASK_COLORS[6],MASK_COLORS[6]), cv2.BORDER_DEFAULT)
+    if not (MASK_COLORS[6] == 0):
+        blur = cv2.blur(mask, (MASK_COLORS[6],MASK_COLORS[6]), cv2.BORDER_DEFAULT)
+    else:
+        blur = mask
 
     # Detect blobs.
     params = cv2.SimpleBlobDetector_Params()
@@ -325,7 +339,7 @@ while Running:
             Calibrate_Points(x, y)
         else:
             # Move mouse cursor to position
-            mouse.move(x*(SCREEN_X/SCALE_X), y*(SCREEN_Y/SCALE_Y))
+            mouse.move(x*SCALE_FACTOR_X, y* SCALE_FACTOR_Y)
             if(MOUSE_PRESSED == 0): # Press mouse button if mouse is not pressed
                 #print("press")
                 mouse.press(button='left')
