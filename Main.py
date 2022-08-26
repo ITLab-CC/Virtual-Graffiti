@@ -296,7 +296,6 @@ Running = True
 while Running:
     success, img = cap.read() # Read img
     img = cv2.resize(img,(SCALE_X, SCALE_Y),interpolation=cv2.INTER_LINEAR) # Resize image
-    img = cv2.flip(img, 1) # Mirror image
 
     #Warp image
     if Calibrate_Status == 0:
@@ -331,15 +330,18 @@ while Running:
         x = int(p[0])
         y = int(p[1])
         if DEBUG == True: # Write cordinates to the blob in the image
+            blobs = cv2.flip(blobs, 1) # Mirror image
             text = str(x) + "|" + str(y)
             blobs = cv2.putText(blobs, text, (x+10,y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1, cv2.LINE_AA)
+            
 
         # If calibration mode is enabled
         if Calibrate_Status > 0:
             Calibrate_Points(x, y)
         else:
             # Move mouse cursor to position
-            mouse.move(x*SCALE_FACTOR_X, y* SCALE_FACTOR_Y)
+            # mouse.move(x*SCALE_FACTOR_X, y* SCALE_FACTOR_Y)
+            mouse.move(SCREEN_X-(x*SCALE_FACTOR_X) -1, SCREEN_Y-(y* SCALE_FACTOR_Y) -1)
             if(MOUSE_PRESSED == 0): # Press mouse button if mouse is not pressed
                 #print("press")
                 mouse.press(button='left')
