@@ -321,9 +321,9 @@ while Running:
     detector = cv2.SimpleBlobDetector_create(params)
     keypoints = detector.detect(blur)
     if DEBUG == True: # Draw the keypoints in image
-        img = cv2.flip(img, 1) # Mirror image
         blank = np.zeros((1, 1))
         blobs = cv2.drawKeypoints(img, keypoints, blank, (0, 0, 255),cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+        blobs = cv2.flip(blobs, 1) # Mirror image
 
     coordinates = cv2.KeyPoint_convert(keypoints) # convert keypoints to coordinates
     # For each blob 
@@ -332,7 +332,7 @@ while Running:
         y = int(p[1])
         if DEBUG == True: # Write cordinates to the blob in the image
             text = str(x*SCALE_FACTOR_X) + "|" + str(y*SCALE_FACTOR_Y)
-            blobs = cv2.putText(blobs, text, (x*SCALE_FACTOR_X,y*SCALE_FACTOR_Y)), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1, cv2.LINE_AA)
+            blobs = cv2.putText(blobs, text, (x-20,y-20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1, cv2.LINE_AA)
             
 
         # If calibration mode is enabled
