@@ -332,7 +332,7 @@ while Running:
         y = int(p[1])
         if DEBUG == True: # Write cordinates to the blob in the image
             text = str(x*SCALE_FACTOR_X) + "|" + str(y*SCALE_FACTOR_Y)
-            blobs = cv2.putText(blobs, text, (x+10,y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1, cv2.LINE_AA)
+            blobs = cv2.putText(blobs, text, (x*SCALE_FACTOR_X,y*SCALE_FACTOR_Y)), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1, cv2.LINE_AA)
             
 
         # If calibration mode is enabled
