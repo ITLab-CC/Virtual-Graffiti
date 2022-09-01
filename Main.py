@@ -2,8 +2,10 @@ import cv2
 import numpy as np
 import json
 from os.path import exists
-import mouse
 import mss
+from pymouse import PyMouse
+
+mouse = PyMouse()
 
 #Default values. Will be loaded from config.conf file
 DEBUG = False
@@ -357,10 +359,10 @@ while Running:
             Calibrate_Points(p[0], p[1])
         else:
             # Move mouse cursor to position
-            mouse.move(x*SCALE_FACTOR_X, y* SCALE_FACTOR_Y)
+            mouse.move(int(x*SCALE_FACTOR_X), int(y* SCALE_FACTOR_Y))
             if(MOUSE_PRESSED == 0): # Press mouse button if mouse is not pressed
                 #print("press")
-                mouse.press(button='left')
+                mouse.press(int(x*SCALE_FACTOR_X), int(y* SCALE_FACTOR_Y))
             MOUSE_PRESSED = 1
     
     # If mouse is pressed and no blob is detected for 5 times then release mouse
@@ -368,7 +370,7 @@ while Running:
         MOUSE_PRESSED +=1
         if(MOUSE_PRESSED > 5):
             #print("release")
-            mouse.release(button='left')
+            mouse.release(int(x*SCALE_FACTOR_X), int(y* SCALE_FACTOR_Y))
             MOUSE_PRESSED = 0
 
     # If debug mode is enabled, print image
