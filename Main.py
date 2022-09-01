@@ -178,30 +178,30 @@ def Calibrate_Points(x, y):
     if Calibrate_Status == 1:
         cv2.circle(cal_imag,(0,0), 50, (0,0,255), -1)
         cv2.circle(cal_imag,(15,15), 15, (255,0,0), -1)
-        if((x < int(SCALE_X/2)) and (y < int(SCALE_Y/2))):
-            CORNERS[0][0] = x-20
-            CORNERS[0][1] = y-20
+        if((x > int(SCALE_X/2)) and (y < int(SCALE_Y/2))):
+            CORNERS[1][0] = x+20
+            CORNERS[1][1] = y-20
             Calibrate_Status = 2
     elif Calibrate_Status == 2:
         cv2.circle(cal_imag,(SCREEN_X-1,0), 50, (0,0,255), -1)
         cv2.circle(cal_imag,(SCREEN_X-16,15), 15, (255,0,0), -1)
-        if((x > int(SCALE_X/2)) and (y < int(SCALE_Y/2))):
-            CORNERS[1][0] = x+20
-            CORNERS[1][1] = y-20
+        if((x < int(SCALE_X/2)) and (y < int(SCALE_Y/2))):
+            CORNERS[0][0] = x-20
+            CORNERS[0][1] = y-20
             Calibrate_Status = 3
     elif Calibrate_Status == 3:
         cv2.circle(cal_imag,(0,SCREEN_Y-1), 50, (0,0,255), -1)
         cv2.circle(cal_imag,(15,SCREEN_Y-16), 15, (255,0,0), -1)
-        if((x < int(SCALE_X/2)) and (y > int(SCALE_Y/2))):
-            CORNERS[2][0] = x-20
-            CORNERS[2][1] = y+20
+        if((x > int(SCALE_X/2)) and (y > int(SCALE_Y/2))):
+            CORNERS[3][0] = x+20
+            CORNERS[3][1] = y+20
             Calibrate_Status = 4
     elif Calibrate_Status == 4:
         cv2.circle(cal_imag,(SCREEN_X-1,SCREEN_Y-1), 50, (0,0,255), -1)
         cv2.circle(cal_imag,(SCREEN_X-16,SCREEN_Y-16), 15, (255,0,0), -1)
-        if((x > int(SCALE_X/2)) and (y > int(SCALE_Y/2))):
-            CORNERS[3][0] = x+20
-            CORNERS[3][1] = y+20
+        if((x < int(SCALE_X/2)) and (y > int(SCALE_Y/2))):
+            CORNERS[2][0] = x-20
+            CORNERS[2][1] = y+20
             Calibrate_Status = 0
 
     cv2.namedWindow("Calibrate", cv2.WINDOW_NORMAL)
@@ -296,6 +296,7 @@ Running = True
 while Running:
     success, img = cap.read() # Read img
     img = cv2.resize(img,(SCALE_X, SCALE_Y),interpolation=cv2.INTER_LINEAR) # Resize image
+    #img = cv2.flip(img, 1) # Mirror image
 
     #Warp image
     if Calibrate_Status == 0:
@@ -323,7 +324,6 @@ while Running:
     if DEBUG == True: # Draw the keypoints in image
         blank = np.zeros((1, 1))
         blobs = cv2.drawKeypoints(img, keypoints, blank, (0, 0, 255),cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-        blobs = cv2.flip(blobs, 1) # Mirror image
 
     coordinates = cv2.KeyPoint_convert(keypoints) # convert keypoints to coordinates
     # For each blob 
@@ -332,15 +332,14 @@ while Running:
         y = int(p[1])
         if DEBUG == True: # Write cordinates to the blob in the image
             text = str(x*SCALE_FACTOR_X) + "|" + str(y*SCALE_FACTOR_Y)
-            blobs = cv2.putText(blobs, text, (x-20,y-20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1, cv2.LINE_AA)
-            
+            blobs = cv2.putText(blobs, text, (x+10,y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1, cv2.LINE_AA)
 
         # If calibration mode is enabled
         if Calibrate_Status > 0:
-            Calibrate_Points(x, y)
+            Calibrate_Points(p[0], y)
         else:
             # Move mouse cursor to position
-            mouse.move(x*SCALE_FACTOR_X, y*SCALE_FACTOR_Y)
+            mouse.move(x*SCALE_FACTOR_X, y* SCALE_FACTOR_Y)
             if(MOUSE_PRESSED == 0): # Press mouse button if mouse is not pressed
                 #print("press")
                 mouse.press(button='left')
