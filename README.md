@@ -297,6 +297,7 @@ $ sudo apt-get install zlib1g
 ## 4.0. Setup Virtual-Graffiti
 ```
 $ pip install mouse
+$ pip install mss
 ```
 ### 4.1. Run Virtual-Graffiti
 ```

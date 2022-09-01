@@ -3,12 +3,14 @@ import numpy as np
 import json
 from os.path import exists
 import mouse
+import mss
 
 #Default values. Will be loaded from config.conf file
 DEBUG = False
 CONFIG_FILE="config.conf"
-SCREEN_X=1920
-SCREEN_Y=1080
+sct=mss.mss()
+SCREEN_X=int(sct.monitors[1]['width'])
+SCREEN_Y=int(sct.monitors[1]['height'])
 CAMERA_X=1920
 CAMERA_Y=1080
 SCALE_X=int(SCREEN_X/2)
