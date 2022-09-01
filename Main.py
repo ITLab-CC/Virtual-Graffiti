@@ -22,6 +22,8 @@ SCALE_FACTOR_Y = SCREEN_Y/SCALE_Y
 CORNERS=[[77, 7], [897, 25], [81, 501], [870, 517]]
 MASK_COLORS=[0, 179, 0, 255, 0, 145, 1]
 MASK_COLORS_OLD=MASK_COLORS
+BORDER_BUFFER=20
+BORDER_BUFFER_OLD=BORDER_BUFFER
 
 
 
@@ -37,6 +39,7 @@ def SaveToJSON():
     global CORNERS
     global MASK_COLORS
     global CONFIG_FILE
+    global BORDER_BUFFER
     data = {
         'config' : {
             'DEBUG': DEBUG,
@@ -47,7 +50,8 @@ def SaveToJSON():
             'SCALE_X' : SCALE_X,
             'SCALE_Y' : SCALE_Y,
             'CORNERS' : CORNERS,
-            'MASK_COLORS' : MASK_COLORS
+            'MASK_COLORS' : MASK_COLORS,
+            'BORDER_BUFFER' : BORDER_BUFFER
         }
     }
     with open(CONFIG_FILE, 'w') as outfile:
@@ -67,6 +71,7 @@ def LoadFromJSON():
     global CONFIG_FILE
     global SCALE_FACTOR_X
     global SCALE_FACTOR_Y
+    global BORDER_BUFFER
     if not exists(CONFIG_FILE):
         SaveToJSON()
     try:
@@ -85,6 +90,7 @@ def LoadFromJSON():
             SCALE_Y = data['config']['SCALE_Y']
             CORNERS = data['config']['CORNERS']
             MASK_COLORS = data['config']['MASK_COLORS']
+            BORDER_BUFFER = data['config']['BORDER_BUFFER']
             SCALE_FACTOR_X = SCREEN_X/SCALE_X
             SCALE_FACTOR_Y = SCREEN_Y/SCALE_Y
     except:
@@ -99,6 +105,7 @@ def setTrackbarPos(x):
     global MASK_COLORS
     global SCALE_FACTOR_X
     global SCALE_FACTOR_Y
+    global BORDER_BUFFER
     try:
         SCALE_X = cv2.getTrackbarPos("Scale X","Options")
         SCALE_Y = cv2.getTrackbarPos("Scale Y","Options")
@@ -109,6 +116,7 @@ def setTrackbarPos(x):
         MASK_COLORS[4] = cv2.getTrackbarPos("Val Min","Options")
         MASK_COLORS[5] = cv2.getTrackbarPos("Val Max","Options")
         MASK_COLORS[6] = cv2.getTrackbarPos("Blur","Options")
+        BORDER_BUFFER = cv2.getTrackbarPos("Boarder Buffer","Options")
         if MASK_COLORS[6] < 1:
             cv2.setTrackbarPos("Blur","Options", 1)
             MASK_COLORS[6] = 1
@@ -125,10 +133,13 @@ def Button_Reset(x):
     global SCALE_X
     global SCALE_Y_OLD
     global SCALE_Y
+    global BORDER_BUFFER
+    global BORDER_BUFFER_OLD
     if(x == 1):
         MASK_COLORS=MASK_COLORS_OLD.copy()
         SCALE_X = SCALE_X_OLD
         SCALE_Y = SCALE_Y_OLD
+        BORDER_BUFFER = BORDER_BUFFER_OLD
         cv2.setTrackbarPos("Scale X","Options", SCALE_X)
         cv2.setTrackbarPos("Scale Y","Options", SCALE_Y)
         cv2.setTrackbarPos("Hue Min","Options", MASK_COLORS[0])
@@ -139,6 +150,7 @@ def Button_Reset(x):
         cv2.setTrackbarPos("Val Max","Options", MASK_COLORS[5])
         cv2.setTrackbarPos("Blur","Options", MASK_COLORS[6])
         cv2.setTrackbarPos("Reset","Options", 0)
+        cv2.setTrackbarPos("Boarder Buffer", BORDER_BUFFER)
         print("Reseted to: ", MASK_COLORS[0],MASK_COLORS[1],MASK_COLORS[2],MASK_COLORS[3],MASK_COLORS[4],MASK_COLORS[5],MASK_COLORS[6])
 
 # Open/Create options menu
@@ -152,6 +164,8 @@ def Option_Colo_Open():
         global SCALE_Y
         global CAMERA_X
         global CAMERA_Y
+        global BORDER_BUFFER
+        global BORDER_BUFFER_OLD
         cv2.namedWindow("Options")
         cv2.resizeWindow("Options",300,600)
         cv2.createTrackbar("Scale X","Options",SCALE_X,CAMERA_X, setTrackbarPos)
@@ -163,10 +177,12 @@ def Option_Colo_Open():
         cv2.createTrackbar("Val Min","Options",MASK_COLORS[4],255, setTrackbarPos)
         cv2.createTrackbar("Val Max","Options",MASK_COLORS[5],255,setTrackbarPos)
         cv2.createTrackbar("Blur","Options",MASK_COLORS[6],20,setTrackbarPos)
+        cv2.createTrackbar("Boarder Buffer","Options", BORDER_BUFFER,50,setTrackbarPos)
         cv2.createTrackbar("Reset","Options",0,1,Button_Reset)
         MASK_COLORS_OLD=MASK_COLORS.copy()
         SCALE_X_OLD = SCALE_X
         SCALE_Y_OLD = SCALE_Y
+        BORDER_BUFFER_OLD = BORDER_BUFFER
 
 
 
@@ -181,29 +197,29 @@ def Calibrate_Points(x, y):
         cv2.circle(cal_imag,(0,0), 50, (0,0,255), -1)
         cv2.circle(cal_imag,(15,15), 15, (255,0,0), -1)
         if((x > int(SCALE_X/2)) and (y < int(SCALE_Y/2))):
-            CORNERS[1][0] = x+20
-            CORNERS[1][1] = y-20
+            CORNERS[1][0] = x+BORDER_BUFFER
+            CORNERS[1][1] = y-BORDER_BUFFER
             Calibrate_Status = 2
     elif Calibrate_Status == 2:
         cv2.circle(cal_imag,(SCREEN_X-1,0), 50, (0,0,255), -1)
         cv2.circle(cal_imag,(SCREEN_X-16,15), 15, (255,0,0), -1)
         if((x < int(SCALE_X/2)) and (y < int(SCALE_Y/2))):
-            CORNERS[0][0] = x-20
-            CORNERS[0][1] = y-20
+            CORNERS[0][0] = x-BORDER_BUFFER
+            CORNERS[0][1] = y-BORDER_BUFFER
             Calibrate_Status = 3
     elif Calibrate_Status == 3:
         cv2.circle(cal_imag,(0,SCREEN_Y-1), 50, (0,0,255), -1)
         cv2.circle(cal_imag,(15,SCREEN_Y-16), 15, (255,0,0), -1)
         if((x > int(SCALE_X/2)) and (y > int(SCALE_Y/2))):
-            CORNERS[3][0] = x+20
-            CORNERS[3][1] = y+20
+            CORNERS[3][0] = x+BORDER_BUFFER
+            CORNERS[3][1] = y+BORDER_BUFFER
             Calibrate_Status = 4
     elif Calibrate_Status == 4:
         cv2.circle(cal_imag,(SCREEN_X-1,SCREEN_Y-1), 50, (0,0,255), -1)
         cv2.circle(cal_imag,(SCREEN_X-16,SCREEN_Y-16), 15, (255,0,0), -1)
         if((x < int(SCALE_X/2)) and (y > int(SCALE_Y/2))):
-            CORNERS[2][0] = x-20
-            CORNERS[2][1] = y+20
+            CORNERS[2][0] = x-BORDER_BUFFER
+            CORNERS[2][1] = y+BORDER_BUFFER
             Calibrate_Status = 0
 
     cv2.namedWindow("Calibrate", cv2.WINDOW_NORMAL)
@@ -303,9 +319,9 @@ while Running:
     #Warp image
     if Calibrate_Status == 0:
         pts1 = np.float32(CORNERS)
-        pts2 = np.float32([[0,0],[SCALE_X,0],[0,SCALE_Y],[SCALE_X,SCALE_Y]])
+        pts2 = np.float32([[0,0],[SCALE_X+BORDER_BUFFER*2,0],[0,SCALE_Y+BORDER_BUFFER*2],[SCALE_X+BORDER_BUFFER*2,SCALE_Y+BORDER_BUFFER*2]])
         matrix = cv2.getPerspectiveTransform(pts1,pts2)
-        img = cv2.warpPerspective(img,matrix,(SCALE_X,SCALE_Y))
+        img = cv2.warpPerspective(img,matrix,(SCALE_X+BORDER_BUFFER*2,SCALE_Y+BORDER_BUFFER*2))
 
     #HSV mask
     imgHSV=cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
@@ -330,15 +346,15 @@ while Running:
     coordinates = cv2.KeyPoint_convert(keypoints) # convert keypoints to coordinates
     # For each blob 
     for p in coordinates:
-        x = SCALE_X-int(p[0])-1
-        y = int(p[1])
+        x = SCALE_X-int(p[0])-1+BORDER_BUFFER
+        y = int(p[1])-BORDER_BUFFER
         if DEBUG == True: # Write cordinates to the blob in the image
             text = str(x*SCALE_FACTOR_X) + "|" + str(y*SCALE_FACTOR_Y)
-            blobs = cv2.putText(blobs, text, (int(p[0])+25,y-25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1, cv2.LINE_AA)
+            blobs = cv2.putText(blobs, text, (int(p[0])+25,int(p[1])-25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1, cv2.LINE_AA)
 
         # If calibration mode is enabled
         if Calibrate_Status > 0:
-            Calibrate_Points(p[0], y)
+            Calibrate_Points(p[0], p[1])
         else:
             # Move mouse cursor to position
             mouse.move(x*SCALE_FACTOR_X, y* SCALE_FACTOR_Y)
