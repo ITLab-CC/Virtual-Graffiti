@@ -28,7 +28,6 @@ BORDER_BUFFER=20
 BORDER_BUFFER_OLD=BORDER_BUFFER
 
 
-
 #Save vars to config.conf file
 def SaveToJSON():
     global DEBUG
@@ -156,6 +155,7 @@ def Button_Reset(x):
         print("Reseted to: ", MASK_COLORS[0],MASK_COLORS[1],MASK_COLORS[2],MASK_COLORS[3],MASK_COLORS[4],MASK_COLORS[5],MASK_COLORS[6])
 
 # Open/Create options menu
+Option_Menu_Open = False
 def Option_Colo_Open():
     if cv2.getWindowProperty("Options",cv2.WND_PROP_VISIBLE) <= 0:
         global MASK_COLORS
@@ -168,6 +168,8 @@ def Option_Colo_Open():
         global CAMERA_Y
         global BORDER_BUFFER
         global BORDER_BUFFER_OLD
+        global Option_Menu_Open
+        Option_Menu_Open = True
         cv2.namedWindow("Options")
         cv2.resizeWindow("Options",300,600)
         cv2.createTrackbar("Scale X","Options",SCALE_X,CAMERA_X, setTrackbarPos)
@@ -254,6 +256,7 @@ def keyinput(i):
         global DEBUG
         if DEBUG == True:
             DEBUG = False
+            Option_Menu_Open = False
             cv2.destroyAllWindows()
         else:
             DEBUG = True
@@ -352,11 +355,14 @@ while Running:
         if DEBUG == True: # Write cordinates to the blob in the image
             text = str(x*SCALE_FACTOR_X) + "|" + str(y*SCALE_FACTOR_Y)
             blobs = cv2.putText(blobs, text, (int(p[0])+25,int(p[1])-25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1, cv2.LINE_AA)
+            if Option_Menu_Open == True:
+                if cv2.getWindowProperty("Options",cv2.WND_PROP_VISIBLE) <= 0:
+                    Option_Menu_Open = False
 
         # If calibration mode is enabled
         if Calibrate_Status > 0:
             Calibrate_Points(p[0], p[1])
-        else:
+        elif Option_Menu_Open == False:
             # Move mouse cursor to position
             mouse.move(int(x*SCALE_FACTOR_X), int(y* SCALE_FACTOR_Y))
             if(MOUSE_PRESSED == 0): # Press mouse button if mouse is not pressed
