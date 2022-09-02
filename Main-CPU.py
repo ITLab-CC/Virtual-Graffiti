@@ -316,7 +316,6 @@ Running = True
 while Running:
     success, img = cap.read() # Read img
     img = cv2.resize(img,(SCALE_X, SCALE_Y),interpolation=cv2.INTER_LINEAR) # Resize image
-    #img = cv2.flip(img, 1) # Mirror image
 
     #Warp image
     if Calibrate_Status == 0:
