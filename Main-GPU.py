@@ -4,6 +4,7 @@ import json
 from os.path import exists
 import mss
 from pymouse import PyMouse
+import time
 
 mouse = PyMouse()
 
@@ -156,6 +157,7 @@ def Button_Reset(x):
         print("Reseted to: ", MASK_COLORS[0],MASK_COLORS[1],MASK_COLORS[2],MASK_COLORS[3],MASK_COLORS[4],MASK_COLORS[5],MASK_COLORS[6])
 
 # Open/Create options menu
+Option_Menu_Open = False
 def Option_Colo_Open():
     if cv2.getWindowProperty("Options",cv2.WND_PROP_VISIBLE) <= 0:
         global MASK_COLORS
@@ -168,6 +170,8 @@ def Option_Colo_Open():
         global CAMERA_Y
         global BORDER_BUFFER
         global BORDER_BUFFER_OLD
+        global Option_Menu_Open
+        Option_Menu_Open = True
         cv2.namedWindow("Options")
         cv2.resizeWindow("Options",300,600)
         cv2.createTrackbar("Scale X","Options",SCALE_X,CAMERA_X, setTrackbarPos)
@@ -254,6 +258,7 @@ def keyinput(i):
         global DEBUG
         if DEBUG == True:
             DEBUG = False
+            Option_Menu_Open = False
             cv2.destroyAllWindows()
         else:
             DEBUG = True
@@ -314,8 +319,9 @@ cap.set(4,CAMERA_Y)
 MOUSE_PRESSED = 0
 Running = True
 while Running:
-    success, img = cap.read() # Read img
-    img = cv2.cuda_GpuMat(img)
+    start = time.time()
+    success, img_org = cap.read() # Read img
+    img = cv2.cuda_GpuMat(img_org)
     img = cv2.cuda.resize(img,(SCALE_X, SCALE_Y),interpolation=cv2.INTER_LINEAR) # Resize image
 
     #Warp image
@@ -327,8 +333,6 @@ while Running:
 
     #HSV mask
     imgHSV = cv2.cuda.cvtColor(img,cv2.COLOR_BGR2HSV)
-    # lower = np.array([MASK_COLORS[0],MASK_COLORS[2],MASK_COLORS[4]])
-    # upper = np.array([MASK_COLORS[1],MASK_COLORS[3],MASK_COLORS[5]])
     lower = (MASK_COLORS[0],MASK_COLORS[2],MASK_COLORS[4], 0)
     upper = (MASK_COLORS[1],MASK_COLORS[3],MASK_COLORS[5], 0)
     mask = cv2.cuda.inRange(imgHSV, lower, upper)  
@@ -339,46 +343,59 @@ while Running:
         blur = mask
 
     # Detect blobs.
-    params = cv2.SimpleBlobDetector_Params()
-    params.filterByArea = True
-    params.minArea = 100
-    detector = cv2.cuda.SimpleBlobDetector_create(params)
-    keypoints = detector.detect(blur)
-    if DEBUG == True: # Draw the keypoints in image
-        blank = np.zeros((1, 1))
-        blobs = cv2.drawKeypoints(img, keypoints, blank, (255, 255, 255),cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    hcd = cv2.cuda.createHoughCirclesDetector(1, 100, 120, 10, 5, 100, 1)
+    coordinatesgpu = hcd.detect(blur)
+    coordinates = coordinatesgpu.download()
 
-    coordinates = cv2.KeyPoint_convert(keypoints) # convert keypoints to coordinates
-    # For each blob 
-    for p in coordinates:
-        x = SCALE_X-int(p[0])-1+BORDER_BUFFER
-        y = int(p[1])-BORDER_BUFFER
-        if DEBUG == True: # Write cordinates to the blob in the image
-            text = str(x*SCALE_FACTOR_X) + "|" + str(y*SCALE_FACTOR_Y)
-            blobs = cv2.putText(blobs, text, (int(p[0])+25,int(p[1])-25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1, cv2.LINE_AA)
+    if DEBUG == True:
+        blobs = img.download()
 
-        # If calibration mode is enabled
-        if Calibrate_Status > 0:
-            Calibrate_Points(p[0], p[1])
-        else:
-            # Move mouse cursor to position
-            mouse.move(int(x*SCALE_FACTOR_X), int(y* SCALE_FACTOR_Y))
-            if(MOUSE_PRESSED == 0): # Press mouse button if mouse is not pressed
-                #print("press")
-                mouse.press(int(x*SCALE_FACTOR_X), int(y* SCALE_FACTOR_Y))
-            MOUSE_PRESSED = 1
-    
-    # If mouse is pressed and no blob is detected for 5 times then release mouse
-    if(MOUSE_PRESSED > 0 and len(coordinates) == 0):
-        MOUSE_PRESSED +=1
-        if(MOUSE_PRESSED > 5):
-            #print("release")
-            mouse.release(int(x*SCALE_FACTOR_X), int(y* SCALE_FACTOR_Y))
-            MOUSE_PRESSED = 0
+    if coordinates is not None:
+        # For each blob
+        for p in coordinates[0]:
+            x = SCALE_X-int(p[0])-1+BORDER_BUFFER
+            y = int(p[1])-BORDER_BUFFER
+            if DEBUG == True: # Write cordinates to the blob in the 
+                print(p)
+                blobs = cv2.circle(blobs,(int(p[0]),int(p[1])), int(p[2]), (0,0,255), 2, cv2.LINE_AA)
+                text = str(x*SCALE_FACTOR_X) + "|" + str(y*SCALE_FACTOR_Y)
+                blobs = cv2.putText(blobs, text, (int(p[0])+25,int(p[1])-25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1, cv2.LINE_AA)
+                if Option_Menu_Open == True:
+                    if cv2.getWindowProperty("Options",cv2.WND_PROP_VISIBLE) <= 0:
+                        Option_Menu_Open = False
+
+            # If calibration mode is enabled
+            if Calibrate_Status > 0:
+                Calibrate_Points(p[0], p[1])
+            elif Option_Menu_Open == False:
+                # Move mouse cursor to position
+                mouse.move(int(x*SCALE_FACTOR_X), int(y* SCALE_FACTOR_Y))
+                if(MOUSE_PRESSED == 0): # Press mouse button if mouse is not pressed
+                    #print("press")
+                    mouse.press(int(x*SCALE_FACTOR_X), int(y* SCALE_FACTOR_Y))
+                MOUSE_PRESSED = 1
+        
+        # If mouse is pressed and no blob is detected for 5 times then release mouse
+        if(MOUSE_PRESSED > 0 and len(coordinates) == 0):
+            MOUSE_PRESSED +=1
+            if(MOUSE_PRESSED > 5):
+                #print("release")
+                mouse.release(int(x*SCALE_FACTOR_X), int(y* SCALE_FACTOR_Y))
+                MOUSE_PRESSED = 0
 
     # If debug mode is enabled, print image
     if DEBUG == True:
+        #img = img.download()
+        imgHSV = imgHSV.download()
+        mask = mask.download()
+        blur = blur.download()
         debug_img = stackImages(0.5,([blobs,imgHSV],[mask,blur]))
         cv2.imshow('Debug', debug_img)
+        # cv2.imshow('blobs', blobs)
+        # cv2.imshow('imgHSV', imgHSV)
+        # cv2.imshow('mask', mask)
+        # cv2.imshow('blur', blur)
+    end = time.time()
+    print(end-start)
 
     keyinput(cv2.waitKey(1) & 0xFF)
