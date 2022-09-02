@@ -4,6 +4,7 @@ import json
 from os.path import exists
 import mss
 from pymouse import PyMouse
+import time
 
 mouse = PyMouse()
 
@@ -26,6 +27,7 @@ MASK_COLORS=[0, 179, 0, 255, 0, 145, 1]
 MASK_COLORS_OLD=MASK_COLORS
 BORDER_BUFFER=20
 BORDER_BUFFER_OLD=BORDER_BUFFER
+
 
 
 #Save vars to config.conf file
@@ -317,6 +319,7 @@ cap.set(4,CAMERA_Y)
 MOUSE_PRESSED = 0
 Running = True
 while Running:
+    start = time.time()
     success, img = cap.read() # Read img
     img = cv2.resize(img,(SCALE_X, SCALE_Y),interpolation=cv2.INTER_LINEAR) # Resize image
 
@@ -382,5 +385,7 @@ while Running:
     if DEBUG == True:
         debug_img = stackImages(0.5,([blobs,imgHSV],[mask,blur]))
         cv2.imshow('Debug', debug_img)
+    end = time.time()
+    print(end-start)
 
     keyinput(cv2.waitKey(1) & 0xFF)
