@@ -5,6 +5,7 @@ from os.path import exists
 import mss
 from pymouse import PyMouse
 import time
+import pygame
 
 mouse = PyMouse()
 
@@ -27,7 +28,7 @@ MASK_COLORS=[0, 179, 0, 255, 0, 145, 1]
 MASK_COLORS_OLD=MASK_COLORS
 BORDER_BUFFER=20
 BORDER_BUFFER_OLD=BORDER_BUFFER
-MOUSE_PRESSED_TIME = 5
+MOUSE_PRESSED_TIME = 4
 MOUSE_PRESSED_TIME_OLD = MOUSE_PRESSED_TIME
 
 
@@ -351,6 +352,10 @@ cap.set(4,CAMERA_Y)
 
 MOUSE_PRESSED = 0
 Running = True
+pygame.mixer.init()
+pygame.mixer.music.load("sounds/spray.mp3")
+pygame.mixer.music.play(loops=-1)
+pygame.mixer.music.pause()
 while Running:
     success, img = cap.read() # Read img
     img = cv2.resize(img,(SCALE_X, SCALE_Y),interpolation=cv2.INTER_LINEAR) # Resize image
@@ -404,12 +409,15 @@ while Running:
                 #print("press")
                 mouse.press(int(x*SCALE_FACTOR_X), int(y* SCALE_FACTOR_Y))
             MOUSE_PRESSED = 1
+            pygame.mixer.music.unpause()
     
     # If mouse is pressed and no blob is detected for 5 times then release mouse
     if(MOUSE_PRESSED > 0 and len(coordinates) == 0):
         MOUSE_PRESSED +=1
+        pygame.mixer.music.pause()
         if(MOUSE_PRESSED > MOUSE_PRESSED_TIME):
             #print("release")
+            # pygame.mixer.music.pause()
             mouse.release(int(x*SCALE_FACTOR_X), int(y* SCALE_FACTOR_Y))
             MOUSE_PRESSED = 0
 
