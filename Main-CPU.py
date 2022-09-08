@@ -192,6 +192,21 @@ def Option_Colo_Open():
 
 
 
+#Camera adjust
+def align_camera(x, y):
+    global CAMERA_X
+    global CAMERA_Y
+    global Running
+    if x > CAMERA_X or x < 0:
+        print(x)
+        print("Align Camera X")
+        Running = False
+    if y > CAMERA_Y or y < 0:
+        print("Align Camera Y")
+        Running = False
+
+
+
 #Calibration mode
 Calibrate_Status = 0
 def Calibrate_Points(x, y):
@@ -203,6 +218,7 @@ def Calibrate_Points(x, y):
         cv2.circle(cal_imag,(0,0), 50, (0,0,255), -1)
         cv2.circle(cal_imag,(15,15), 15, (255,0,0), -1)
         if((x > int(SCALE_X/2)) and (y < int(SCALE_Y/2))):
+            align_camera((x*SCALE_FACTOR_X)+BORDER_BUFFER, (y*SCALE_FACTOR_Y)-BORDER_BUFFER)
             CORNERS[1][0] = x+BORDER_BUFFER
             CORNERS[1][1] = y-BORDER_BUFFER
             Calibrate_Status = 2
@@ -210,6 +226,7 @@ def Calibrate_Points(x, y):
         cv2.circle(cal_imag,(SCREEN_X-1,0), 50, (0,0,255), -1)
         cv2.circle(cal_imag,(SCREEN_X-16,15), 15, (255,0,0), -1)
         if((x < int(SCALE_X/2)) and (y < int(SCALE_Y/2))):
+            align_camera((x*SCALE_FACTOR_X)+BORDER_BUFFER, (y*SCALE_FACTOR_Y)-BORDER_BUFFER)
             CORNERS[0][0] = x-BORDER_BUFFER
             CORNERS[0][1] = y-BORDER_BUFFER
             Calibrate_Status = 3
@@ -217,6 +234,7 @@ def Calibrate_Points(x, y):
         cv2.circle(cal_imag,(0,SCREEN_Y-1), 50, (0,0,255), -1)
         cv2.circle(cal_imag,(15,SCREEN_Y-16), 15, (255,0,0), -1)
         if((x > int(SCALE_X/2)) and (y > int(SCALE_Y/2))):
+            align_camera((x*SCALE_FACTOR_X)+BORDER_BUFFER, (y*SCALE_FACTOR_Y)-BORDER_BUFFER)
             CORNERS[3][0] = x+BORDER_BUFFER
             CORNERS[3][1] = y+BORDER_BUFFER
             Calibrate_Status = 4
@@ -224,6 +242,7 @@ def Calibrate_Points(x, y):
         cv2.circle(cal_imag,(SCREEN_X-1,SCREEN_Y-1), 50, (0,0,255), -1)
         cv2.circle(cal_imag,(SCREEN_X-16,SCREEN_Y-16), 15, (255,0,0), -1)
         if((x < int(SCALE_X/2)) and (y > int(SCALE_Y/2))):
+            align_camera((x*SCALE_FACTOR_X)+BORDER_BUFFER, (y*SCALE_FACTOR_Y)-BORDER_BUFFER)
             CORNERS[2][0] = x-BORDER_BUFFER
             CORNERS[2][1] = y+BORDER_BUFFER
             Calibrate_Status = 0
@@ -386,6 +405,5 @@ while Running:
         debug_img = stackImages(0.5,([blobs,imgHSV],[mask,blur]))
         cv2.imshow('Debug', debug_img)
     end = time.time()
-    print(end-start)
 
     keyinput(cv2.waitKey(1) & 0xFF)
