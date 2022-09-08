@@ -27,6 +27,8 @@ MASK_COLORS=[0, 179, 0, 255, 0, 145, 1]
 MASK_COLORS_OLD=MASK_COLORS
 BORDER_BUFFER=20
 BORDER_BUFFER_OLD=BORDER_BUFFER
+MOUSE_PRESSED_TIME = 5
+MOUSE_PRESSED_TIME_OLD = MOUSE_PRESSED_TIME
 
 
 
@@ -43,6 +45,7 @@ def SaveToJSON():
     global MASK_COLORS
     global CONFIG_FILE
     global BORDER_BUFFER
+    global MOUSE_PRESSED_TIME
     data = {
         'config' : {
             'DEBUG': DEBUG,
@@ -54,7 +57,8 @@ def SaveToJSON():
             'SCALE_Y' : SCALE_Y,
             'CORNERS' : CORNERS,
             'MASK_COLORS' : MASK_COLORS,
-            'BORDER_BUFFER' : BORDER_BUFFER
+            'BORDER_BUFFER' : BORDER_BUFFER,
+            'MOUSE_PRESSED_TIME' : MOUSE_PRESSED_TIME
         }
     }
     with open(CONFIG_FILE, 'w') as outfile:
@@ -75,6 +79,7 @@ def LoadFromJSON():
     global SCALE_FACTOR_X
     global SCALE_FACTOR_Y
     global BORDER_BUFFER
+    global MOUSE_PRESSED_TIME
     if not exists(CONFIG_FILE):
         SaveToJSON()
     try:
@@ -96,6 +101,7 @@ def LoadFromJSON():
             BORDER_BUFFER = data['config']['BORDER_BUFFER']
             SCALE_FACTOR_X = SCREEN_X/SCALE_X
             SCALE_FACTOR_Y = SCREEN_Y/SCALE_Y
+            MOUSE_PRESSED_TIME = data['config']['MOUSE_PRESSED_TIME']
     except:
         print("The config has a wrong format. Delete the file and a new one will be generated")
 
@@ -109,6 +115,7 @@ def setTrackbarPos(x):
     global SCALE_FACTOR_X
     global SCALE_FACTOR_Y
     global BORDER_BUFFER
+    global MOUSE_PRESSED_TIME
     try:
         SCALE_X = cv2.getTrackbarPos("Scale X","Options")
         SCALE_Y = cv2.getTrackbarPos("Scale Y","Options")
@@ -120,6 +127,7 @@ def setTrackbarPos(x):
         MASK_COLORS[5] = cv2.getTrackbarPos("Val Max","Options")
         MASK_COLORS[6] = cv2.getTrackbarPos("Blur","Options")
         BORDER_BUFFER = cv2.getTrackbarPos("Boarder Buffer","Options")
+        MOUSE_PRESSED_TIME = cv2.getTrackbarPos("Mouse Pressed Time","Options")
         if MASK_COLORS[6] < 1:
             cv2.setTrackbarPos("Blur","Options", 1)
             MASK_COLORS[6] = 1
@@ -138,11 +146,14 @@ def Button_Reset(x):
     global SCALE_Y
     global BORDER_BUFFER
     global BORDER_BUFFER_OLD
+    global MOUSE_PRESSED_TIME
+    global MOUSE_PRESSED_TIME_OLD
     if(x == 1):
         MASK_COLORS=MASK_COLORS_OLD.copy()
         SCALE_X = SCALE_X_OLD
         SCALE_Y = SCALE_Y_OLD
         BORDER_BUFFER = BORDER_BUFFER_OLD
+        MOUSE_PRESSED_TIME = MOUSE_PRESSED_TIME_OLD
         cv2.setTrackbarPos("Scale X","Options", SCALE_X)
         cv2.setTrackbarPos("Scale Y","Options", SCALE_Y)
         cv2.setTrackbarPos("Hue Min","Options", MASK_COLORS[0])
@@ -154,6 +165,7 @@ def Button_Reset(x):
         cv2.setTrackbarPos("Blur","Options", MASK_COLORS[6])
         cv2.setTrackbarPos("Reset","Options", 0)
         cv2.setTrackbarPos("Boarder Buffer", BORDER_BUFFER)
+        cv2.setTrackbarPos("Mouse Pressed Time", MOUSE_PRESSED_TIME)
         print("Reseted to: ", MASK_COLORS[0],MASK_COLORS[1],MASK_COLORS[2],MASK_COLORS[3],MASK_COLORS[4],MASK_COLORS[5],MASK_COLORS[6])
 
 # Open/Create options menu
@@ -171,6 +183,7 @@ def Option_Colo_Open():
         global BORDER_BUFFER
         global BORDER_BUFFER_OLD
         global Option_Menu_Open
+        global MOUSE_PRESSED_TIME
         Option_Menu_Open = True
         cv2.namedWindow("Options")
         cv2.resizeWindow("Options",300,600)
@@ -185,6 +198,7 @@ def Option_Colo_Open():
         cv2.createTrackbar("Blur","Options",MASK_COLORS[6],20,setTrackbarPos)
         cv2.createTrackbar("Boarder Buffer","Options", BORDER_BUFFER,50,setTrackbarPos)
         cv2.createTrackbar("Reset","Options",0,1,Button_Reset)
+        cv2.createTrackbar("Mouse Pressed Time","Options",MOUSE_PRESSED_TIME,10,setTrackbarPos)
         MASK_COLORS_OLD=MASK_COLORS.copy()
         SCALE_X_OLD = SCALE_X
         SCALE_Y_OLD = SCALE_Y
@@ -338,7 +352,6 @@ cap.set(4,CAMERA_Y)
 MOUSE_PRESSED = 0
 Running = True
 while Running:
-    start = time.time()
     success, img = cap.read() # Read img
     img = cv2.resize(img,(SCALE_X, SCALE_Y),interpolation=cv2.INTER_LINEAR) # Resize image
 
@@ -395,7 +408,7 @@ while Running:
     # If mouse is pressed and no blob is detected for 5 times then release mouse
     if(MOUSE_PRESSED > 0 and len(coordinates) == 0):
         MOUSE_PRESSED +=1
-        if(MOUSE_PRESSED > 5):
+        if(MOUSE_PRESSED > MOUSE_PRESSED_TIME):
             #print("release")
             mouse.release(int(x*SCALE_FACTOR_X), int(y* SCALE_FACTOR_Y))
             MOUSE_PRESSED = 0
@@ -404,6 +417,5 @@ while Running:
     if DEBUG == True:
         debug_img = stackImages(0.5,([blobs,imgHSV],[mask,blur]))
         cv2.imshow('Debug', debug_img)
-    end = time.time()
 
     keyinput(cv2.waitKey(1) & 0xFF)
