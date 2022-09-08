@@ -356,6 +356,7 @@ pygame.mixer.init()
 pygame.mixer.music.load("sounds/spray.mp3")
 pygame.mixer.music.play(loops=-1)
 pygame.mixer.music.pause()
+spray = False
 while Running:
     success, img = cap.read() # Read img
     img = cv2.resize(img,(SCALE_X, SCALE_Y),interpolation=cv2.INTER_LINEAR) # Resize image
@@ -395,6 +396,9 @@ while Running:
         if DEBUG == True: # Write cordinates to the blob in the image
             text = str(x*SCALE_FACTOR_X) + "|" + str(y*SCALE_FACTOR_Y)
             blobs = cv2.putText(blobs, text, (int(p[0])+25,int(p[1])-25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1, cv2.LINE_AA)
+                # If debug mode is enabled, print image
+            debug_img = stackImages(0.5,([blobs,imgHSV],[mask,blur]))
+            cv2.imshow('Debug', debug_img)
             if Option_Menu_Open == True:
                 if cv2.getWindowProperty("Options",cv2.WND_PROP_VISIBLE) <= 0:
                     Option_Menu_Open = False
@@ -406,10 +410,15 @@ while Running:
             # Move mouse cursor to position
             mouse.move(int(x*SCALE_FACTOR_X), int(y* SCALE_FACTOR_Y))
             if(MOUSE_PRESSED == 0): # Press mouse button if mouse is not pressed
-                #print("press")
-                mouse.press(int(x*SCALE_FACTOR_X), int(y* SCALE_FACTOR_Y))
-            MOUSE_PRESSED = 1
-            pygame.mixer.music.unpause()
+                #Activate debugmode in the bottom right corner
+                if ((SCREEN_X-100) <= int(x*SCALE_FACTOR_X) and (SCREEN_Y-100) <= int(y* SCALE_FACTOR_Y) and spray == False):
+                    DEBUG = True
+                    pygame.mixer.music.pause()
+                else:
+                    mouse.press(int(x*SCALE_FACTOR_X), int(y* SCALE_FACTOR_Y))
+                    MOUSE_PRESSED = 1
+                    pygame.mixer.music.unpause()
+                    spray = True
     
     # If mouse is pressed and no blob is detected for 5 times then release mouse
     if(MOUSE_PRESSED > 0 and len(coordinates) == 0):
@@ -417,13 +426,8 @@ while Running:
         pygame.mixer.music.pause()
         if(MOUSE_PRESSED > MOUSE_PRESSED_TIME):
             #print("release")
-            # pygame.mixer.music.pause()
             mouse.release(int(x*SCALE_FACTOR_X), int(y* SCALE_FACTOR_Y))
             MOUSE_PRESSED = 0
-
-    # If debug mode is enabled, print image
-    if DEBUG == True:
-        debug_img = stackImages(0.5,([blobs,imgHSV],[mask,blur]))
-        cv2.imshow('Debug', debug_img)
+            spray = False
 
     keyinput(cv2.waitKey(1) & 0xFF)
