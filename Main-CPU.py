@@ -419,6 +419,8 @@ while Running:
                     MOUSE_PRESSED = 1
                     pygame.mixer.music.unpause()
                     spray = True
+            elif (spray and len(coordinates) == 1):
+                pygame.mixer.music.unpause()
     
     # If mouse is pressed and no blob is detected for 5 times then release mouse
     if(MOUSE_PRESSED > 0 and len(coordinates) == 0):
