@@ -298,6 +298,7 @@ $ sudo apt-get install zlib1g
 ```
 $ pip install mouse
 $ pip install mss
+$ pip install pygame
 ```
 ### 4.1. Run Virtual-Graffiti
 ```

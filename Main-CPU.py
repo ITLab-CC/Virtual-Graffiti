@@ -6,6 +6,7 @@ import mss
 from pymouse import PyMouse
 import time
 import pygame
+from threading import Thread
 
 mouse = PyMouse()
 
@@ -31,6 +32,34 @@ BORDER_BUFFER_OLD=BORDER_BUFFER
 MOUSE_PRESSED_TIME = 4
 MOUSE_PRESSED_TIME_OLD = MOUSE_PRESSED_TIME
 
+
+
+class ThreadedCamera(object):
+    def __init__(self, src=0):
+        self.capture = cv2.VideoCapture(src)
+        self.capture.set(3, CAMERA_X)
+        self.capture.set(4, CAMERA_Y)
+        self.capture.set(cv2.CAP_PROP_BUFFERSIZE, 2)
+        
+        # Start frame retrieval thread
+        self.thread = Thread(target=self.update, args=())
+        self.thread.daemon = True
+        self.thread.start()
+        
+    def update(self):
+        while True:
+            if self.capture.isOpened():
+                (self.status, self.frame) = self.capture.read()
+            # time.sleep(self.FPS)
+    
+    def grap_frame(self):
+        try:
+            if self.status:
+                return self.frame
+            return None
+        except:
+            return None
+        
 
 
 #Save vars to config.conf file
@@ -323,7 +352,6 @@ def stackImages(scale,imgArray):
                 if len(imgArray[x][y].shape) == 2: imgArray[x][y]= cv2.cvtColor( imgArray[x][y], cv2.COLOR_GRAY2BGR)
         imageBlank = np.zeros((height, width, 3), np.uint8)
         hor = [imageBlank]*rows
-        hor_con = [imageBlank]*rows
         for x in range(0, rows):
             hor[x] = np.hstack(imgArray[x])
         ver = np.vstack(hor)
@@ -345,10 +373,7 @@ def stackImages(scale,imgArray):
 #----------------------------------------------------------------#
 LoadFromJSON() # Load from config.conf file
 
-cap = cv2.VideoCapture(0) # Set camera input
-# Set img size of camera (x,y)
-cap.set(3,CAMERA_X)
-cap.set(4,CAMERA_Y)
+cap = ThreadedCamera(0)
 
 MOUSE_PRESSED = 0
 Running = True
@@ -359,9 +384,13 @@ pygame.mixer.music.pause()
 spray = False
 prev_frame_time = 0 
 while Running:
-    success, img = cap.read() # Read img
+    # success, img = cap.read() # Read img
+    img = cap.grap_frame()
+    if img is None:
+        continue
     img = cv2.resize(img,(SCALE_X, SCALE_Y),interpolation=cv2.INTER_LINEAR) # Resize image
     #Warp image
+    
     if Calibrate_Status == 0:
         pts1 = np.float32(CORNERS)
         pts2 = np.float32([[0,0],[SCALE_X+BORDER_BUFFER*2,0],[0,SCALE_Y+BORDER_BUFFER*2],[SCALE_X+BORDER_BUFFER*2,SCALE_Y+BORDER_BUFFER*2]])
@@ -377,7 +406,7 @@ while Running:
         blur = cv2.blur(mask, (MASK_COLORS[6],MASK_COLORS[6]), cv2.BORDER_DEFAULT)
     else:
         blur = mask
-
+        
     # Detect blobs.
     params = cv2.SimpleBlobDetector_Params()
     params.filterByArea = True
