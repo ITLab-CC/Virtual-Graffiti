@@ -375,6 +375,10 @@ LoadFromJSON() # Load from config.conf file
 
 cap = ThreadedCamera(0)
 
+lower = np.array([MASK_COLORS[0],MASK_COLORS[2],MASK_COLORS[4]])
+upper = np.array([MASK_COLORS[1],MASK_COLORS[3],MASK_COLORS[5]])
+blank = np.zeros((1, 1))
+
 MOUSE_PRESSED = 0
 Running = True
 pygame.mixer.init()
@@ -383,14 +387,14 @@ pygame.mixer.music.play(loops=-1)
 pygame.mixer.music.pause()
 spray = False
 prev_frame_time = 0 
+
 while Running:
-    # success, img = cap.read() # Read img
     img = cap.grap_frame()
     if img is None:
         continue
     img = cv2.resize(img,(SCALE_X, SCALE_Y),interpolation=cv2.INTER_LINEAR) # Resize image
-    #Warp image
     
+    #Warp image
     if Calibrate_Status == 0:
         pts1 = np.float32(CORNERS)
         pts2 = np.float32([[0,0],[SCALE_X+BORDER_BUFFER*2,0],[0,SCALE_Y+BORDER_BUFFER*2],[SCALE_X+BORDER_BUFFER*2,SCALE_Y+BORDER_BUFFER*2]])
@@ -398,9 +402,7 @@ while Running:
         img = cv2.warpPerspective(img,matrix,(SCALE_X+BORDER_BUFFER*2,SCALE_Y+BORDER_BUFFER*2))
 
     #HSV mask
-    imgHSV=cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
-    lower = np.array([MASK_COLORS[0],MASK_COLORS[2],MASK_COLORS[4]])
-    upper= np.array([MASK_COLORS[1],MASK_COLORS[3],MASK_COLORS[5]])
+    imgHSV = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(imgHSV, lower, upper)  
     if not (MASK_COLORS[6] == 0):
         blur = cv2.blur(mask, (MASK_COLORS[6],MASK_COLORS[6]), cv2.BORDER_DEFAULT)
@@ -414,8 +416,8 @@ while Running:
     detector = cv2.SimpleBlobDetector_create(params)
     keypoints = detector.detect(blur)
     if DEBUG == True: # Draw the keypoints in image
-        blank = np.zeros((1, 1))
         blobs = cv2.drawKeypoints(img, keypoints, blank, (255, 255, 255),cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+        # show fps
         new_frame_time = time.time()
         fps = 1/(new_frame_time-prev_frame_time)
         prev_frame_time = new_frame_time
@@ -467,7 +469,6 @@ while Running:
         mouse.press(int(x*SCALE_FACTOR_X), int(y* SCALE_FACTOR_Y))
         pygame.mixer.music.pause()
         if(MOUSE_PRESSED > MOUSE_PRESSED_TIME):
-            #print("release")
             mouse.release(int(x*SCALE_FACTOR_X), int(y* SCALE_FACTOR_Y))
             MOUSE_PRESSED = 0
             spray = False

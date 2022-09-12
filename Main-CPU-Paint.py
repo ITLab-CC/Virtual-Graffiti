@@ -56,13 +56,7 @@ class ThreadedCamera(object):
         self.capture = cv2.VideoCapture(src)
         self.capture.set(3, CAMERA_X)
         self.capture.set(4, CAMERA_Y)
-        self.capture.set(cv2.CAP_PROP_BUFFERSIZE, 2)
-       
-        # FPS = 1/X
-        # X = desired FPS
-        # self.FPS = 1/30
-        # self.FPS_MS = int(self.FPS * 1000)
-        
+        self.capture.set(cv2.CAP_PROP_BUFFERSIZE, 2)       
         # Start frame retrieval thread
         self.thread = Thread(target=self.update, args=())
         self.thread.daemon = True
@@ -80,6 +74,8 @@ class ThreadedCamera(object):
             return None 
         except:
             return None
+
+
 
 #Save vars to config.conf file
 def SaveToJSON():
@@ -320,7 +316,6 @@ def Calibrate_Points(x, y):
 
 
 
-
 #Switch case for key input
 # o = Option
 # c = Calibration
@@ -408,7 +403,6 @@ def stackImages(scale,imgArray):
                 if len(imgArray[x][y].shape) == 2: imgArray[x][y]= cv2.cvtColor( imgArray[x][y], cv2.COLOR_GRAY2BGR)
         imageBlank = np.zeros((height, width, 3), np.uint8)
         hor = [imageBlank]*rows
-        # hor_con = [imageBlank]*rows # Wasnt used
         for x in range(0, rows):
             hor[x] = np.hstack(imgArray[x])
         ver = np.vstack(hor)
@@ -470,7 +464,7 @@ while Running:
         pts2 = np.float32([[0,0],[SCALE_X+BORDER_BUFFER*2,0],[0,SCALE_Y+BORDER_BUFFER*2],[SCALE_X+BORDER_BUFFER*2,SCALE_Y+BORDER_BUFFER*2]])
         matrix = cv2.getPerspectiveTransform(pts1,pts2)
         runWarp = False
-    img = cv2.warpPerspective(img,matrix,(SCALE_X+BORDER_BUFFER*2,SCALE_Y+BORDER_BUFFER*2))
+        img = cv2.warpPerspective(img,matrix,(SCALE_X+BORDER_BUFFER*2,SCALE_Y+BORDER_BUFFER*2))
    
     print("Warp time: " + str(time.time()-zwischenZeit))
     zwischenZeit = time.time()
