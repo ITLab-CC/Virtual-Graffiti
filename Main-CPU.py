@@ -357,6 +357,7 @@ pygame.mixer.music.load("sounds/spray.mp3")
 pygame.mixer.music.play(loops=-1)
 pygame.mixer.music.pause()
 spray = False
+prev_frame_time = 0 
 while Running:
     success, img = cap.read() # Read img
     img = cv2.resize(img,(SCALE_X, SCALE_Y),interpolation=cv2.INTER_LINEAR) # Resize image
@@ -386,6 +387,12 @@ while Running:
     if DEBUG == True: # Draw the keypoints in image
         blank = np.zeros((1, 1))
         blobs = cv2.drawKeypoints(img, keypoints, blank, (255, 255, 255),cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+        new_frame_time = time.time()
+        fps = 1/(new_frame_time-prev_frame_time)
+        prev_frame_time = new_frame_time
+        fps = int(fps)
+        fps = str(fps)
+        cv2.putText(blobs, fps, (7, 70), cv2.FONT_HERSHEY_SIMPLEX, 3, (100, 255, 0), 3, cv2.LINE_AA)
         debug_img = stackImages(0.5,([blobs,imgHSV],[mask,blur]))
         cv2.imshow('Debug', debug_img)
         if Option_Menu_Open == True:
