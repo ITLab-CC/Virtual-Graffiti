@@ -360,7 +360,6 @@ spray = False
 while Running:
     success, img = cap.read() # Read img
     img = cv2.resize(img,(SCALE_X, SCALE_Y),interpolation=cv2.INTER_LINEAR) # Resize image
-
     #Warp image
     if Calibrate_Status == 0:
         pts1 = np.float32(CORNERS)
@@ -387,6 +386,11 @@ while Running:
     if DEBUG == True: # Draw the keypoints in image
         blank = np.zeros((1, 1))
         blobs = cv2.drawKeypoints(img, keypoints, blank, (255, 255, 255),cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+        debug_img = stackImages(0.5,([blobs,imgHSV],[mask,blur]))
+        cv2.imshow('Debug', debug_img)
+        if Option_Menu_Open == True:
+            if cv2.getWindowProperty("Options",cv2.WND_PROP_VISIBLE) <= 0:
+                Option_Menu_Open = False
 
     coordinates = cv2.KeyPoint_convert(keypoints) # convert keypoints to coordinates
     # For each blob 
@@ -396,7 +400,6 @@ while Running:
         if DEBUG == True: # Write cordinates to the blob in the image
             text = str(x*SCALE_FACTOR_X) + "|" + str(y*SCALE_FACTOR_Y)
             blobs = cv2.putText(blobs, text, (int(p[0])+25,int(p[1])-25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1, cv2.LINE_AA)
-                # If debug mode is enabled, print image
             debug_img = stackImages(0.5,([blobs,imgHSV],[mask,blur]))
             cv2.imshow('Debug', debug_img)
             if Option_Menu_Open == True:
