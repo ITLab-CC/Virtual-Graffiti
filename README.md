@@ -299,6 +299,8 @@ $ sudo apt-get install zlib1g
 $ pip install mouse
 $ pip install mss
 $ pip install pygame
+$ pip install thread6
+$ pip install pyuserinput
 ```
 ### 4.1. Run Virtual-Graffiti
 ```
