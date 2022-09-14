@@ -40,7 +40,7 @@ class ThreadedCamera(object):
         self.capture.set(3, CAMERA_X)
         self.capture.set(4, CAMERA_Y)
         self.capture.set(cv2.CAP_PROP_BUFFERSIZE, 2)
-        
+        self.lastTime = time.time() 
         # Start frame retrieval thread
         self.thread = Thread(target=self.update, args=())
         self.thread.daemon = True
@@ -49,8 +49,12 @@ class ThreadedCamera(object):
     def update(self):
         while True:
             if self.capture.isOpened():
+                newTime = time.time()
+                diff = newTime - self.lastTime
+                fps = 1/diff
+                print ("FPS: " + str(fps))
+                self.lastTime = newTime
                 (self.status, self.frame) = self.capture.read()
-            # time.sleep(self.FPS)
     
     def grap_frame(self):
         try:
@@ -389,6 +393,7 @@ spray = False
 prev_frame_time = 0 
 
 while Running:
+    start = time.time()
     img = cap.grap_frame()
     if img is None:
         continue
@@ -473,4 +478,6 @@ while Running:
             MOUSE_PRESSED = 0
             spray = False
 
+    end = time.time()
+    diff = end - start
     keyinput(cv2.waitKey(1) & 0xFF)
