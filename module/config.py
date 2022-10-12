@@ -4,6 +4,8 @@ import mss                   # Get the screen size
 import platform              # Get host platform (MacOS/Windows/Linux)
 from os.path import exists   # If file exists
 import numpy as np           # Create arrays
+from module.threadedcamera import find_camera
+from module.threadedcamera import find_cv2_algorithm
 
 class Config:
     DEBUG = True
@@ -14,13 +16,8 @@ class Config:
     SCREEN_Y=1080
     CAMERA_X=1920
     CAMERA_Y=1080
-    try:
-        sct=mss.mss()
-        SCREEN_X=int(sct.monitors[1]['width'])
-        SCREEN_Y=int(sct.monitors[1]['height'])
-    except:
-        SCREEN_X=1920
-        SCREEN_Y=1080
+    SCREEN_X=1920
+    SCREEN_Y=1080
     SCALE_X=int(SCREEN_X/2)
     SCALE_Y=int(SCREEN_Y/2)
     SCALE_FACTOR_X = SCREEN_X/SCALE_X
@@ -30,9 +27,36 @@ class Config:
     BLUR = 1
     BORDER_BUFFER=20
     SPRAY_COLOUR="#00FF00"
+    CAMERA_SRC=0
+    CV2_ALGORITHM_NUMBER=cv2.CAP_ANY
     
     # def <c(self):
     #     self.LoadFromJSON()
+    
+    def autodetect(self):
+        #Get screen size
+        try:
+            sct=mss.mss()
+            self.SCREEN_X=int(sct.monitors[1]['width'])
+            self.SCREEN_Y=int(sct.monitors[1]['height'])
+        except:
+            self.SCREEN_X=1920
+            self.SCREEN_Y=1080
+            
+        #Get camera size
+        # ... TODO
+        
+        #find camera
+        devices = find_camera()
+        if not len(devices) == 0:
+            self.CAMERA_SRC=devices[0]
+            
+        # Find best algorithm for cv2
+        algo = find_cv2_algorithm(3)
+        if algo[0][2] > 0:
+            self.CV2_ALGORITHM_NUMBER=algo[0][0]
+        
+                
             
     def copy(self, other=None):
         if not(isinstance(other,Config)) or other==None:
@@ -55,11 +79,13 @@ class Config:
                 'CAMERA_Y' : self.CAMERA_Y,
                 'SCALE_X' : self.SCALE_X,
                 'SCALE_Y' : self.SCALE_Y,
+                'CAMERA_SRC' : self.CAMERA_SRC,
+                'CV2_ALGORITHM_NUMBER' : self.CV2_ALGORITHM_NUMBER,
                 'CORNERS' : self.CORNERS,
                 'MASK_COLORS' : self.MASK_COLORS,
                 'BLUR' : self.BLUR,
                 'BORDER_BUFFER' : self.BORDER_BUFFER,
-                'SPRAY_COLOUR' : self.SPRAY_COLOUR                
+                'SPRAY_COLOUR' : self.SPRAY_COLOUR
             }
         }
         with open(self.CONFIG_FILE, 'w') as outfile:
@@ -68,6 +94,7 @@ class Config:
     #Load vars from config.conf file
     def LoadFromJSON(self):
         if not exists(self.CONFIG_FILE):
+            self.autodetect()
             self.SaveToJSON()
             return
         temp_old = self.copy()
@@ -75,17 +102,23 @@ class Config:
             with open(self.CONFIG_FILE) as json_file:
                 data = json.load(json_file)
                 self.DEBUG = data['config']['DEBUG']
-                self.PAINT_ENABLED = data['PAINT_ENABLED']['PAINT_ENABLED']
+                self.PAINT_ENABLED = data['config']['PAINT_ENABLED']
                 if self.DEBUG == "true":
                     self.DEBUG = True
                 if self.DEBUG == "false":
                     self.DEBUG = False
+                if self.PAINT_ENABLED == "true":
+                    self.PAINT_ENABLED = True
+                if self.PAINT_ENABLED == "false":
+                    self.PAINT_ENABLED = False
                 self.SCREEN_X = data['config']['SCREEN_X']
                 self.SCREEN_Y = data['config']['SCREEN_Y']
                 self.CAMERA_X = data['config']['CAMERA_X']
                 self.CAMERA_Y = data['config']['CAMERA_Y']
                 self.SCALE_X = data['config']['SCALE_X']
                 self.SCALE_Y = data['config']['SCALE_Y']
+                self.CAMERA_SRC = data['config']['CAMERA_SRC']
+                self.CV2_ALGORITHM_NUMBER = data['config']['CV2_ALGORITHM_NUMBER']
                 self.CORNERS = data['config']['CORNERS']
                 self.MASK_COLORS = data['config']['MASK_COLORS']
                 self.BLUR = data['config']['BLUR']
@@ -93,8 +126,8 @@ class Config:
                 self.SCALE_FACTOR_X = self.SCREEN_X/self.SCALE_X
                 self.SCALE_FACTOR_Y = self.SCREEN_Y/self.SCALE_Y
                 self.SPRAY_COLOUR = data['config']['SPRAY_COLOUR']
-        except:
-            print("The config has a wrong format. Delete the file and a new one will be generated")
+        except Exception as e:
+            print("The config has a wrong format. Delete the file and a new one will be generated. Error: {}" .format(e))
             self = temp_old
 
     #Calibration mode
