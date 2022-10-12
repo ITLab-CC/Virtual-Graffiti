@@ -10,7 +10,11 @@ class OptionMenue:
         self.Conf_Old = conf_old
     
     def isOpen(self):
-        return cv2.getWindowProperty("Options",cv2.WND_PROP_VISIBLE) > 0
+        try:
+            result = cv2.getWindowProperty("Options",cv2.WND_PROP_VISIBLE) > 0
+        except:
+            result = False
+        return result
     #Options menu
     def setTrackbarPos(self):
         try:
