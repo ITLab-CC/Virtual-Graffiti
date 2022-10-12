@@ -84,13 +84,13 @@ def find_camera():
 
 # Capture picture parallel
 class ThreadedCamera(object):    
-    def __init__(self, Cam_X, Cam_Y, src=0, algorithm=cv2.CAP_ANY):
-        self.start(Cam_X, Cam_Y, src, algorithm)
+    def __init__(self, Cam_X, Cam_Y, fps, src=0, algorithm=cv2.CAP_ANY):
+        self.start(Cam_X, Cam_Y, fps, src, algorithm)
         
     def Status(self):
         return self.Running
 
-    def start(self, Cam_X, Cam_Y, src=None, algorithm=cv2.CAP_ANY):
+    def start(self, Cam_X, Cam_Y, fps, src=None, algorithm=cv2.CAP_ANY):
         try:
             self.capture = cv2.VideoCapture(src, algorithm)
             # Test camera inpur src
@@ -109,7 +109,8 @@ class ThreadedCamera(object):
         # Set img size of camera (x,y)
         self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, Cam_X)
         self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, Cam_Y)
-        self.capture.set(cv2.CAP_PROP_FPS, 30);
+        self.capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
+        self.capture.set(cv2.CAP_PROP_FPS, fps);
         self.capture.set(cv2.CAP_PROP_BUFFERSIZE, 2)
         
         self.lastTime = time.time() 

@@ -10,7 +10,7 @@ from module.threadedcamera import find_cv2_algorithm
 class Config:
     DEBUG = True
     PAINT_ENABLED = True
-    CONFIG_FILE="config2.conf"
+    CONFIG_FILE="config.conf"
     SOUND_SPRAY_FILE="sounds/spray.mp3"
     SCREEN_X=1920
     SCREEN_Y=1080
@@ -28,6 +28,7 @@ class Config:
     BORDER_BUFFER=20
     SPRAY_COLOUR="#00FF00"
     CAMERA_SRC=0
+    CAMERA_FPS=60
     CV2_ALGORITHM_NUMBER=cv2.CAP_ANY
     
     # def <c(self):
@@ -80,6 +81,7 @@ class Config:
                 'SCALE_X' : self.SCALE_X,
                 'SCALE_Y' : self.SCALE_Y,
                 'CAMERA_SRC' : self.CAMERA_SRC,
+                'CAMERA_FPS' : self.CAMERA_FPS,
                 'CV2_ALGORITHM_NUMBER' : self.CV2_ALGORITHM_NUMBER,
                 'CORNERS' : self.CORNERS,
                 'MASK_COLORS' : self.MASK_COLORS,
@@ -118,6 +120,7 @@ class Config:
                 self.SCALE_X = data['config']['SCALE_X']
                 self.SCALE_Y = data['config']['SCALE_Y']
                 self.CAMERA_SRC = data['config']['CAMERA_SRC']
+                self.CAMERA_FPS = data['config']['CAMERA_FPS']
                 self.CV2_ALGORITHM_NUMBER = data['config']['CV2_ALGORITHM_NUMBER']
                 self.CORNERS = data['config']['CORNERS']
                 self.MASK_COLORS = data['config']['MASK_COLORS']

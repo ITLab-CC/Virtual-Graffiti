@@ -173,7 +173,7 @@ lastTimeInput = False
 
 
 #cap = cv2.VideoCapture(0) # Set camera input
-cap = ThreadedCamera(CONF.CAMERA_X, CONF.CAMERA_Y, CONF.CAMERA_SRC, CONF.CV2_ALGORITHM_NUMBER)
+cap = ThreadedCamera(CONF.CAMERA_X, CONF.CAMERA_Y, CONF.CAMERA_FPS, CONF.CAMERA_SRC, CONF.CV2_ALGORITHM_NUMBER)
 
 try:
     Running = True
