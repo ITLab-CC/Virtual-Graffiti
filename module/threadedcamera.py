@@ -121,6 +121,7 @@ class ThreadedCamera(object):
         
     def end(self):
         self.Running = False
+        time.sleep(1)
         self.capture.release()
         
         
