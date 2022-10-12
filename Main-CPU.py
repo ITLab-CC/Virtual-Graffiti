@@ -102,22 +102,19 @@ def keyinput(i):
             CONF.Calibrate_Status = 1
             CONF.Calibrate_Points()
     def debug():
-        global DEBUG
         global CONF
-        if DEBUG == True:
-            DEBUG = False
+        CONF.DEBUG = not CONF.DEBUG
+        if CONF.DEBUG == False:
             cv2.destroyAllWindows()
-        else:
-            DEBUG = True
         CONF.SaveToJSON()
     def paint():
         global CONF
         CONF.PAINT_ENABLED = not CONF.PAINT_ENABLED
-        CONF.SaveToJSON()
         if CONF.PAINT_ENABLED:
             PAINT.Show()
         else:
             PAINT.Hide()
+        CONF.SaveToJSON()
     switcher={
             111:option_open, # key 'o'
             99:calibrate, # key 'c'
@@ -155,7 +152,7 @@ global OPTIONMENUE
 OPTIONMENUE = OptionMenue(CONF, CONF_OLD, "Options")
 
 # global PAINT
-PAINT = Paint(CONF.SPRAY_COLOUR)
+PAINT = Paint(CONF.SPRAY_COLOUR, CONF.PAINT_ENABLED)
 Paint_key_init()
 
 # Sound
@@ -172,13 +169,12 @@ spraying = False
 prev_frame_time = 0
 lastPos = False
 lastTimeInput = False
-
+# MOUSE_PRESSED = 0
 
 
 #cap = cv2.VideoCapture(0) # Set camera input
-cap = ThreadedCamera(CONF.CAMERA_X, CONF.CAMERA_Y, 0)
+cap = ThreadedCamera(CONF.CAMERA_X, CONF.CAMERA_Y, CONF.CAMERA_SRC, CONF.CV2_ALGORITHM_NUMBER)
 
-# MOUSE_PRESSED = 0
 try:
     Running = True
     while Running:
@@ -246,7 +242,8 @@ try:
                 # Move mouse cursor to position
                 if spraying == False:
                     if ((CONF.SCREEN_X-100) <= realX and (CONF.SCREEN_Y-100) <= realY):
-                        DEBUG = True
+                        CONF.DEBUG = True
+                        CONF.SaveToJSON()
                         continue
                 if CONF.PAINT_ENABLED:
                     if lastPos != False:

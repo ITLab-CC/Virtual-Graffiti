@@ -11,7 +11,7 @@ class Paint:
     Name = "PAINT SCREEN"
     SPRAY_COLOUR = "#00FF00"
     
-    def __init__(self, spray_color):
+    def __init__(self, spray_color="#00FF00", enabled=True):
         self.SPRAY_COLOUR = spray_color
         # Screen init
         self.tkScreen = Tk()
@@ -19,7 +19,10 @@ class Paint:
         self.tkScreen.title(self.Name)
         self.canvas = Canvas(self.tkScreen, width=self.tkScreen.winfo_screenwidth(), height=self.tkScreen.winfo_screenheight(), bg="white")
         self.canvas.pack()
-        self.tkScreen.withdraw() # Hide the screen
+        if enabled:
+            self.Show()
+        else:
+            self.Hide()
         self.tkScreen.update()
     
     def Hide(self):
