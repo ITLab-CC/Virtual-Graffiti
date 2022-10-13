@@ -11,7 +11,7 @@ from tkinter import *        # Drawing
 
 from module.config import Config
 from module.optionmenue import OptionMenue
-from module.threadedcamera import ThreadedCamera
+from module.imageprocessing import ImageProcessing
 from module.paint import Paint
 from module.sound import Sound
 
@@ -24,8 +24,9 @@ global PAINT
 # Close/exit/end/dead/kill/destroy/terminate/stop/quit/bye lol
 def quitClean():
     global Running
+    global IMAGEPROCESSING
     Running = False
-    cap.end()
+    IMAGEPROCESSING.end()
     PAINT.End()
     cv2.destroyAllWindows()
     print("Goodbye")
@@ -90,98 +91,6 @@ def Paint_key_init():
 
 
 
-# OpenCV2: Process picture
-# Resize img
-def Resize_img(img, x, y):
-    return cv2.resize(img,(x, y),interpolation=cv2.INTER_LINEAR) # Resize image
-
-# Warp img
-def Warp_img(img, corners, scale_x, scale_y, boarder_buffer):
-    pts1 = np.float32(corners)
-    pts2 = np.float32([[0,0],[scale_x+boarder_buffer*2,0],[0,scale_y+boarder_buffer*2],[scale_x+boarder_buffer*2,scale_y+boarder_buffer*2]])
-    matrix = cv2.getPerspectiveTransform(pts1,pts2)
-    return cv2.warpPerspective(img,matrix,(scale_x+boarder_buffer*2,scale_y+boarder_buffer*2))
-
-# HSV mask
-def HSV_img(img):
-    return cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
-
-# Mask1
-def Mask_img(img, lower, upper):
-    return cv2.inRange(img, lower, upper)
-
-# Blur img
-def Blur_img(img, blur):
-    if blur == 0:
-        return img
-    return cv2.blur(img, (blur,blur), cv2.BORDER_DEFAULT)
-
-# Detect blobs
-def Detect_blob(img, minArea = 100):
-    params = cv2.SimpleBlobDetector_Params()
-    params.filterByArea = True
-    params.minArea = minArea
-    detector = cv2.SimpleBlobDetector_create(params)
-    keypoints = detector.detect(img) # keypoints
-    coordinates = cv2.KeyPoint_convert(keypoints) # convert keypoints to coordinates
-    return coordinates, keypoints
-
-# Draw circle around blob
-Blank = np.zeros((1, 1))
-def Draw_blobs(img, keypoints, color=(255, 255, 255)):
-    return cv2.drawKeypoints(img, keypoints, Blank, color,cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-
-# Write blob coordinates to img
-def Draw_coordinates(img, orgx, orgy, text, color=(255, 255, 255)):
-    return cv2.putText(img, text, (orgx+25,orgy-25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 1, cv2.LINE_AA)
-
-# Write FPS to img
-prev_frame_time = 0
-new_frame_time = 0
-def Show_FPS(img, captureFps=-1):
-    global prev_frame_time
-    global new_frame_time
-    new_frame_time = time.time()
-    fps = 1/(new_frame_time-prev_frame_time)
-    prev_frame_time = new_frame_time
-    fps = int(fps)
-    fps = str(fps)
-    fpsString = "FPS: " + fps + " Capture: " + str(captureFps)
-    cv2.putText(img, fpsString, (7, 70), cv2.FONT_HERSHEY_SIMPLEX, 3, (100, 255, 0), 3, cv2.LINE_AA)
-
-# 4 pictures to 1 img
-def Stack_img(scale,imgArray):
-    rows = len(imgArray)
-    cols = len(imgArray[0])
-    rowsAvailable = isinstance(imgArray[0], list)
-    width = imgArray[0][0].shape[1]
-    height = imgArray[0][0].shape[0]
-    if rowsAvailable:
-        for x in range ( 0, rows):
-            for y in range(0, cols):
-                if imgArray[x][y].shape[:2] == imgArray[0][0].shape [:2]:
-                    imgArray[x][y] = cv2.resize(imgArray[x][y], (0, 0), None, scale, scale)
-                else:
-                    imgArray[x][y] = cv2.resize(imgArray[x][y], (imgArray[0][0].shape[1], imgArray[0][0].shape[0]), None, scale, scale)
-                if len(imgArray[x][y].shape) == 2: imgArray[x][y]= cv2.cvtColor( imgArray[x][y], cv2.COLOR_GRAY2BGR)
-        imageBlank = np.zeros((height, width, 3), np.uint8)
-        hor = [imageBlank]*rows
-        for x in range(0, rows):
-            hor[x] = np.hstack(imgArray[x])
-        ver = np.vstack(hor)
-    else:
-        for x in range(0, rows):
-            if imgArray[x].shape[:2] == imgArray[0].shape[:2]:
-                imgArray[x] = cv2.resize(imgArray[x], (0, 0), None, scale, scale)
-            else:
-                imgArray[x] = cv2.resize(imgArray[x], (imgArray[0].shape[1], imgArray[0].shape[0]), None,scale, scale)
-            if len(imgArray[x].shape) == 2: imgArray[x] = cv2.cvtColor(imgArray[x], cv2.COLOR_GRAY2BGR)
-        hor= np.hstack(imgArray)
-        ver = hor
-    return ver
-
-
-
 #----------------------------------------------------------------#
 #Start
 #----------------------------------------------------------------#
@@ -203,38 +112,26 @@ Paint_key_init()
 global SOUND
 SOUND = Sound(CONF.SOUND_SPRAY_FILE)
 
+global IMAGEPROCESSING
+IMAGEPROCESSING = ImageProcessing(CONF, 2)
+
 # Some vars
 spraying = False
 lastPos = False
 lastTimeInput = False
 # MOUSE_PRESSED = 0
-
-
-# Set camera input
-cap = ThreadedCamera(CONF.CAMERA_X, CONF.CAMERA_Y, CONF.CAMERA_FPS, CONF.CAMERA_SRC, CONF.CV2_ALGORITHM_NUMBER)
     
 try:
     Running = True
     while Running:
-        img, captureFps = cap.grap_frame() # Read img
-        if img is None:
-            continue
-
-        img = Resize_img(img, CONF.SCALE_X, CONF.SCALE_Y) # Resize image
-
-        #Warp image
-        if CONF.Calibrate_Status == 0:
-            img = Warp_img(img, CONF.CORNERS, CONF.SCALE_X, CONF.SCALE_Y, CONF.BORDER_BUFFER)
-
-        #HSV mask
-        imgHSV = HSV_img(img)
-        mask = Mask_img(imgHSV, Config.MASK_LOWER, Config.MASK_UPPER)
         
-        blur = Blur_img(mask, CONF.BLUR)
-
+        keyinput(cv2.waitKey(1) & 0xFF)
+        
         # Detect blobs.
-        coordinates, keypoints = Detect_blob(blur, 100)
-
+        debug_img, coordinates, keypoints = IMAGEPROCESSING.grap_coordinates()
+        if coordinates == None or keypoints == None:
+            continue
+        
         # For each blob
         for p in coordinates:
             lastTimeInput = time.time()
@@ -277,10 +174,6 @@ try:
                 #     #mouse.press(Button.left)
                 #     #mouse.mouseDown()
                 #     MOUSE_PRESSED = 1
-                
-            if CONF.DEBUG == True: # Write cordinates to the blob in the image
-                text = str(orgx) + "|" + str(orgy)
-                img = Draw_coordinates(img, orgx, orgy, text, (255, 255, 255))
         
         if lastTimeInput != False and time.time() - lastTimeInput > 0.5: # If no input for 0.5 seconds then stop drawing
             SOUND.stop()
@@ -303,24 +196,11 @@ try:
         #         #mouse.release(Button.left)
         #         #mouse.mouseUp()
         #         MOUSE_PRESSED = 0
-
-        if CONF.DEBUG == True: # Draw the keypoints in image
-            img = Draw_blobs(img, keypoints, (255, 255, 255))
-            
-            # show fps
-            Show_FPS(img, captureFps)
-
-            # If debug mode is enabled, print image
-            try:
-                debug_img = Stack_img(0.5,([img,imgHSV],[mask,blur]))
-                cv2.imshow('Debug', debug_img)
-            except:
-                cv2.imshow('blobs', img)
-                cv2.imshow('imgHSV', imgHSV)
-                cv2.imshow('mask', mask)
-                cv2.imshow('blur', blur)
-
-        keyinput(cv2.waitKey(1) & 0xFF)
+        
+        
+        # if debug_img == None:
+        #     continue
+        cv2.imshow('Debug', debug_img)
     
 except KeyboardInterrupt:
     quitClean()
