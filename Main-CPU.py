@@ -160,8 +160,8 @@ global SOUND
 SOUND = Sound(CONF.SOUND_SPRAY_FILE)
 
 # Some const vars
-lower = np.array([CONF.MASK_COLORS[0],CONF.MASK_COLORS[2],CONF.MASK_COLORS[4]])
-upper= np.array([CONF.MASK_COLORS[1],CONF.MASK_COLORS[3],CONF.MASK_COLORS[5]])
+# lower = np.array([CONF.MASK_COLORS[0],CONF.MASK_COLORS[2],CONF.MASK_COLORS[4]])
+# upper= np.array([CONF.MASK_COLORS[1],CONF.MASK_COLORS[3],CONF.MASK_COLORS[5]])
 blank = np.zeros((1, 1))
 
 # Some vars
@@ -192,7 +192,7 @@ try:
 
         #HSV mask
         imgHSV=cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
-        mask = cv2.inRange(imgHSV, lower, upper)  
+        mask = cv2.inRange(imgHSV, Config.MASK_LOWER, Config.MASK_UPPER)  
         if not (CONF.BLUR == 0):
             blur = cv2.blur(mask, (CONF.BLUR,CONF.BLUR), cv2.BORDER_DEFAULT)
         else:

@@ -31,6 +31,9 @@ class Config:
     CAMERA_FPS=60
     CV2_ALGORITHM_NUMBER=cv2.CAP_ANY
     
+    MASK_LOWER = np.array([MASK_COLORS[0],MASK_COLORS[2],MASK_COLORS[4]])
+    MASK_UPPER= np.array([MASK_COLORS[1],MASK_COLORS[3],MASK_COLORS[5]])
+    
     # def <c(self):
     #     self.LoadFromJSON()
     
@@ -66,6 +69,8 @@ class Config:
             other = self
         other.CORNERS=self.CORNERS.copy()
         other.MASK_COLORS=self.MASK_COLORS.copy()
+        other.MASK_LOWER=np.array([self.MASK_COLORS[0],self.MASK_COLORS[2],self.MASK_COLORS[4]])
+        other.MASK_UPPER=np.array([self.MASK_COLORS[1],self.MASK_COLORS[3],self.MASK_COLORS[5]])
         return other
 
     #Save vars to config.conf file
@@ -129,6 +134,9 @@ class Config:
                 self.SCALE_FACTOR_X = self.SCREEN_X/self.SCALE_X
                 self.SCALE_FACTOR_Y = self.SCREEN_Y/self.SCALE_Y
                 self.SPRAY_COLOUR = data['config']['SPRAY_COLOUR']
+                
+                self.MASK_LOWER=np.array([self.MASK_COLORS[0],self.MASK_COLORS[2],self.MASK_COLORS[4]])
+                self.MASK_UPPER=np.array([self.MASK_COLORS[1],self.MASK_COLORS[3],self.MASK_COLORS[5]])
         except Exception as e:
             print("The config has a wrong format. Delete the file and a new one will be generated. Error: {}" .format(e))
             self = temp_old
