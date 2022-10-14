@@ -128,8 +128,8 @@ try:
         keyinput(cv2.waitKey(1) & 0xFF)
         
         # Detect blobs.
-        debug_img, coordinates, keypoints = IMAGEPROCESSING.grap_coordinates()
-        if coordinates == None or keypoints == None:
+        success, debug_img, coordinates, keypoints = IMAGEPROCESSING.grap_coordinates()
+        if success == False:
             continue
         
         # For each blob
@@ -197,9 +197,7 @@ try:
         #         #mouse.mouseUp()
         #         MOUSE_PRESSED = 0
         
-        
-        # if debug_img == None:
-        #     continue
+        # Show debug image
         cv2.imshow('Debug', debug_img)
     
 except KeyboardInterrupt:

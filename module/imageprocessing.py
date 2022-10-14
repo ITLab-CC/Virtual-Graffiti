@@ -63,7 +63,7 @@ def Show_FPS(img, captureFps=-1):
     fps = int(fps)
     fps = str(fps)
     fpsString = "FPS: " + fps + " Capture: " + str(captureFps)
-    cv2.putText(img, fpsString, (7, 70), cv2.FONT_HERSHEY_SIMPLEX, 3, (100, 255, 0), 3, cv2.LINE_AA)
+    cv2.putText(img, fpsString, (7, 70), cv2.FONT_HERSHEY_SIMPLEX, 2, (100, 255, 0), 3, cv2.LINE_AA)
 
 # 4 pictures to 1 img
 def Stack_img(scale,imgArray):
@@ -102,7 +102,7 @@ def Stack_img(scale,imgArray):
 class ImageProcessing():
     threads = []
     
-    def __init__(self, conf, threads):
+    def __init__(self, conf, threads = 1):
         self.Conf = conf
         # Set camera input
         self.cap = ThreadedCamera(self.Conf.CAMERA_X, self.Conf.CAMERA_Y, self.Conf.CAMERA_FPS, self.Conf.CAMERA_SRC, self.Conf.CV2_ALGORITHM_NUMBER)
@@ -141,7 +141,7 @@ class ImageProcessing():
                 self.blur = Blur_img(self.mask, self.Conf.BLUR)
 
                 # Detect blobs.
-                self.coordinates, self.keypoints = Detect_blob(self.blur, 100)
+                self.coordinates, self.keypoints = Detect_blob(self.blur, 50)
                 self.status = True
                 
                 if self.Conf.DEBUG == True: # Draw the keypoints in image
@@ -158,7 +158,7 @@ class ImageProcessing():
                     self.img = Draw_blobs(self.img, self.keypoints, (255, 255, 255))
                     
                     # show fps
-                    Show_FPS(self.img, self.captureFps)
+                    Show_FPS(self.img, int(self.captureFps))
 
                     # If debug mode is enabled, print image
                     try:
@@ -184,10 +184,10 @@ class ImageProcessing():
             try:
                 if th.status:
                     th.status = False
-                    return th.debug_img, th.coordinates, th.keypoints
+                    return True, th.debug_img, th.coordinates, th.keypoints
             except:
                 continue
-        return None, None, None
+        return False, None, None, None
     
     def end(self):
         for th in self.threads:
