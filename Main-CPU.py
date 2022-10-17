@@ -90,6 +90,19 @@ def Paint_key_init():
     PAINT.tkScreen.bind("p", tkInput)
 
 
+global old_Frame
+global new_Frame
+old_Frame = time.time()
+new_Frame = time.time()
+def getFPS():
+    global old_Frame
+    global new_Frame
+    new_Frame = time.time()
+    fps = 1/(new_Frame-old_Frame)
+    old_Frame = new_Frame
+    return int(fps)
+
+
 
 #----------------------------------------------------------------#
 #Start
@@ -113,7 +126,7 @@ global SOUND
 SOUND = Sound(CONF.SOUND_SPRAY_FILE)
 
 global IMAGEPROCESSING
-IMAGEPROCESSING = ImageProcessing(CONF, 2)
+IMAGEPROCESSING = ImageProcessing(CONF, 1)
 
 # Some vars
 spraying = False
@@ -128,14 +141,15 @@ try:
         keyinput(cv2.waitKey(1) & 0xFF)
         
         # Detect blobs.
-        success, debug_img, coordinates, keypoints = IMAGEPROCESSING.grap_coordinates()
+        success, debug_img, coordinates, blobSizes = IMAGEPROCESSING.grap_coordinates()
         if success == False:
             continue
         
         # For each blob
+        counter = 0
         for p in coordinates:
             lastTimeInput = time.time()
-            blobSize = keypoints[0].size
+            blobSize = blobSizes[counter]
             orgx = int(p[0])
             orgy = int(p[1])
             newx = CONF.SCALE_X-orgx+CONF.BORDER_BUFFER-1
@@ -174,6 +188,7 @@ try:
                 #     #mouse.press(Button.left)
                 #     #mouse.mouseDown()
                 #     MOUSE_PRESSED = 1
+            counter += 1
         
         if lastTimeInput != False and time.time() - lastTimeInput > 0.5: # If no input for 0.5 seconds then stop drawing
             SOUND.stop()
@@ -199,6 +214,8 @@ try:
         
         # Show debug image
         cv2.imshow('Debug', debug_img)
+        
+        print(getFPS())
     
 except KeyboardInterrupt:
     quitClean()
