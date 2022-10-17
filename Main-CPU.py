@@ -140,57 +140,7 @@ try:
         
         keyinput(cv2.waitKey(1) & 0xFF)
         
-        # Detect blobs.
-        success, debug_img, coordinates, blobSizes = IMAGEPROCESSING.grap_coordinates()
-        if success == False:
-            continue
-        
-        # For each blob
-        counter = 0
-        for p in coordinates:
-            lastTimeInput = time.time()
-            blobSize = blobSizes[counter]
-            orgx = int(p[0])
-            orgy = int(p[1])
-            newx = CONF.SCALE_X-orgx+CONF.BORDER_BUFFER-1
-            newy = orgy-CONF.BORDER_BUFFER
-            realX = int(newx*CONF.SCALE_FACTOR_X)
-            realY = int(newy*CONF.SCALE_FACTOR_Y)
-
-            # If calibration mode is enabled
-            if CONF.Calibrate_Status > 0:
-                CONF.Calibrate_Points(orgx, orgy)
-            elif OPTIONMENUE.isOpen() == False:
-                # Move mouse cursor to position
-                if spraying == False:
-                    if ((CONF.SCREEN_X-100) <= realX and (CONF.SCREEN_Y-100) <= realY):
-                        CONF.DEBUG = True
-                        CONF.SaveToJSON()
-                        continue
-                if CONF.PAINT_ENABLED:
-                    if lastPos != False:
-                        PAINT.createGrafittiLine(lastPos[0], lastPos[1], realX, realY, blobSize)
-                        PAINT.createGrafittiLineBigger(lastPos[0], lastPos[1], realX, realY, blobSize)
-                    lastPos = (realX, realY)
-                # else:
-                #     mouse.move(realX, realY)
-                #     mouse.press(realX, realY)
-                spraying = True
-                SOUND.play()
-                # Move mouse cursor to position
-                # #mouse.move(int(x*CONF.SCALE_FACTOR_X), int(y* CONF.SCALE_FACTOR_Y))
-                # #mouse.moveTo(int(x*CONF.SCALE_FACTOR_X), int(y* CONF.SCALE_FACTOR_Y), duration=0)
-                # if(MOUSE_PRESSED == 0): # Press mouse button if mouse is not pressed
-                #     print("press")
-                #     #mouse.press(int(x*CONF.SCALE_FACTOR_X), int(y* CONF.SCALE_FACTOR_Y))
-                #     #mouse.press(button='left')
-                #     #mouse.press('left')
-                #     #mouse.press(Button.left)
-                #     #mouse.mouseDown()
-                #     MOUSE_PRESSED = 1
-            counter += 1
-        
-        if lastTimeInput != False and time.time() - lastTimeInput > 0.5: # If no input for 0.5 seconds then stop drawing
+        if lastTimeInput != False and time.time() - lastTimeInput > 0.1: # If no input for 0.5 seconds then stop drawing
             SOUND.stop()
             lastTimeInput = False
             if CONF.PAINT_ENABLED:
@@ -200,22 +150,73 @@ try:
             # MOUSE_PRESSED = 0
             spraying = False
         
-        # If mouse is pressed and no blob is detected for 5 times then release mouse
-        # if(MOUSE_PRESSED > 0 and len(coordinates) == 0):
-        #     MOUSE_PRESSED +=1
-        #     if(MOUSE_PRESSED > 5):
-        #         print("release")
-        #         #mouse.release(int(x*CONF.SCALE_FACTOR_X), int(y*CONF.SCALE_FACTOR_Y))
-        #         #mouse.release(button='left')
-        #         #mouse.release('left')
-        #         #mouse.release(Button.left)
-        #         #mouse.mouseUp()
-        #         MOUSE_PRESSED = 0
+        # Detect blobs.
+        success, debug_img, coordinates, blobSizes = IMAGEPROCESSING.grap_coordinates()
+        if success == False:
+            continue
         
         # Show debug image
-        cv2.imshow('Debug', debug_img)
+        if CONF.DEBUG:
+            cv2.imshow('Debug', debug_img)
+            print("FPS:" + str(getFPS()))
         
-        print(getFPS())
+        # For each blob
+        if len(coordinates) != 0:
+            counter = 0
+            lastTimeInput = time.time()
+            for p in coordinates:
+                blobSize = blobSizes[counter]
+                orgx = int(p[0])
+                orgy = int(p[1])
+                newx = CONF.SCALE_X-orgx+CONF.BORDER_BUFFER-1
+                newy = orgy-CONF.BORDER_BUFFER
+                realX = int(newx*CONF.SCALE_FACTOR_X)
+                realY = int(newy*CONF.SCALE_FACTOR_Y)
+
+                # If calibration mode is enabled
+                if CONF.Calibrate_Status > 0:
+                    CONF.Calibrate_Points(orgx, orgy)
+                elif OPTIONMENUE.isOpen() == False:
+                    # Move mouse cursor to position
+                    if spraying == False:
+                        if ((CONF.SCREEN_X-100) <= realX and (CONF.SCREEN_Y-100) <= realY):
+                            CONF.DEBUG = True
+                            CONF.SaveToJSON()
+                            continue
+                    if CONF.PAINT_ENABLED:
+                        if lastPos != False:
+                            PAINT.createGrafittiLine(lastPos[0], lastPos[1], realX, realY, blobSize)
+                            PAINT.createGrafittiLineBigger(lastPos[0], lastPos[1], realX, realY, blobSize)
+                        lastPos = (realX, realY)
+                    # else:
+                    #     mouse.move(realX, realY)
+                    #     mouse.press(realX, realY)
+                    spraying = True
+                    SOUND.play()
+                    # Move mouse cursor to position
+                    # #mouse.move(int(x*CONF.SCALE_FACTOR_X), int(y* CONF.SCALE_FACTOR_Y))
+                    # #mouse.moveTo(int(x*CONF.SCALE_FACTOR_X), int(y* CONF.SCALE_FACTOR_Y), duration=0)
+                    # if(MOUSE_PRESSED == 0): # Press mouse button if mouse is not pressed
+                    #     print("press")
+                    #     #mouse.press(int(x*CONF.SCALE_FACTOR_X), int(y* CONF.SCALE_FACTOR_Y))
+                    #     #mouse.press(button='left')
+                    #     #mouse.press('left')
+                    #     #mouse.press(Button.left)
+                    #     #mouse.mouseDown()
+                    #     MOUSE_PRESSED = 1
+                counter += 1
+            
+            # If mouse is pressed and no blob is detected for 5 times then release mouse
+            # if(MOUSE_PRESSED > 0 and len(coordinates) == 0):
+            #     MOUSE_PRESSED +=1
+            #     if(MOUSE_PRESSED > 5):
+            #         print("release")
+            #         #mouse.release(int(x*CONF.SCALE_FACTOR_X), int(y*CONF.SCALE_FACTOR_Y))
+            #         #mouse.release(button='left')
+            #         #mouse.release('left')
+            #         #mouse.release(Button.left)
+            #         #mouse.mouseUp()
+            #         MOUSE_PRESSED = 0
     
 except KeyboardInterrupt:
     quitClean()

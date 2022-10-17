@@ -1,4 +1,3 @@
-from asyncio import threads
 import cv2                   # OpenCV
 import numpy as np           # Create arrays
 from threading import Thread # Multitreading
@@ -169,6 +168,10 @@ class ImageProcessing():
                 #Detect blobs.
                 self.coordinates, keypoints = Detect_blob(blur, 50, GPU)
                 
+                # If no blob detected continue
+                if len(self.coordinates) == 0 and self.Conf.DEBUG == False:
+                    continue
+                
                 # Get blob size
                 self.blobSizes = []
                 if not keypoints == None:
@@ -177,13 +180,13 @@ class ImageProcessing():
                         self.blobSizes.append(keypoints[counter].size)
                         counter += 1
                 
-                if GPU:
-                    img = img.download()
-                    imgHSV = imgHSV.download()
-                    mask = mask.download()
-                    blur = blur.download()
-                
                 if self.Conf.DEBUG == True: # Draw the keypoints in image
+                    if GPU:
+                        img = img.download()
+                        imgHSV = imgHSV.download()
+                        mask = mask.download()
+                        blur = blur.download()
+                    
                     for p in self.coordinates:
                         orgx = int(p[0])
                         orgy = int(p[1])
@@ -208,7 +211,9 @@ class ImageProcessing():
                         self.debug_img = Stack_img(0.5,([img,imgHSV],[mask,blur]))
                     except:
                         self.debug_img = None
-                        
+                else:
+                    self.debug_img = None
+        
                 # set status to 1 -> img processing done
                 self.status = True
         
