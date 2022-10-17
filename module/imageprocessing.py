@@ -124,24 +124,24 @@ class ImageProcessing():
         Running = True
         def Run(self):
             while self.Running:
-                self.img, self.captureFps = self.cap.grap_frame() # Read img
-                if self.img is None:
+                img, captureFps = self.cap.grap_frame() # Read img
+                if img is None:
                     continue
 
-                self.img = Resize_img(self.img, self.Conf.SCALE_X, self.Conf.SCALE_Y) # Resize image
+                img = Resize_img(img, self.Conf.SCALE_X, self.Conf.SCALE_Y) # Resize image
 
                 #Warp image
                 if self.Conf.Calibrate_Status == 0:
-                    self.img = Warp_img(self.img, self.Conf.CORNERS, self.Conf.SCALE_X, self.Conf.SCALE_Y, self.Conf.BORDER_BUFFER)
+                    img = Warp_img(img, self.Conf.CORNERS, self.Conf.SCALE_X, self.Conf.SCALE_Y, self.Conf.BORDER_BUFFER)
 
                 #HSV mask
-                self.imgHSV = HSV_img(self.img)
-                self.mask = Mask_img(self.imgHSV, self.Conf.MASK_LOWER, self.Conf.MASK_UPPER)
+                imgHSV = HSV_img(img)
+                mask = Mask_img(imgHSV, self.Conf.MASK_LOWER, self.Conf.MASK_UPPER)
                 
-                self.blur = Blur_img(self.mask, self.Conf.BLUR)
+                blur = Blur_img(mask, self.Conf.BLUR)
 
                 # Detect blobs.
-                self.coordinates, self.keypoints = Detect_blob(self.blur, 50)
+                self.coordinates, self.keypoints = Detect_blob(blur, 50)
                 self.status = True
                 
                 if self.Conf.DEBUG == True: # Draw the keypoints in image
@@ -153,26 +153,26 @@ class ImageProcessing():
                         realX = int(newx*self.Conf.SCALE_FACTOR_X)
                         realY = int(newy*self.Conf.SCALE_FACTOR_Y)
                         text = str(realX) + "|" + str(realY)
-                        self.img = Draw_coordinates(self.img, orgx, orgy, text, (255, 255, 255))
+                        img = Draw_coordinates(img, orgx, orgy, text, (255, 255, 255))
                     
-                    self.img = Draw_blobs(self.img, self.keypoints, (255, 255, 255))
+                    img = Draw_blobs(img, self.keypoints, (255, 255, 255))
                     
                     # show fps
-                    Show_FPS(self.img, int(self.captureFps))
+                    Show_FPS(img, int(captureFps))
 
                     # If debug mode is enabled, print image
                     try:
-                        self.debug_img = Stack_img(0.5,([self.img,self.imgHSV],[self.mask,self.blur]))
+                        self.debug_img = Stack_img(0.5,([img,imgHSV],[mask,blur]))
                     except:
                         self.debug_img = None
-                
-        def grap_coordinates(self):
-            try:
-                if self.status:
-                    return self.debug_img, self.coordinates, self.keypoints
-                return None, None
-            except:
-                return None, None
+        
+        # def grap_coordinates(self):
+        #     try:
+        #         if self.status:
+        #             return True, self.debug_img, self.coordinates, self.keypoints
+        #         return False, None, None, None
+        #     except:
+        #         return False, None, None, None
         
         def end(self):
             self.Running = False
