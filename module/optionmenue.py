@@ -29,6 +29,7 @@ class OptionMenue:
                 self.Conf.MASK_COLORS[5] = cv2.getTrackbarPos("Val Max",self.Name)
                 self.Conf.BLUR = cv2.getTrackbarPos("Blur",self.Name)
                 self.Conf.BORDER_BUFFER = cv2.getTrackbarPos("Boarder Buffer",self.Name)
+                GPU_ENABLED = cv2.getTrackbarPos("Enable GPU",self.Name)
                 if self.Conf.BLUR < 1:
                     cv2.setTrackbarPos("Blur",self.Name, 1)
                     self.Conf.BLUR = 1
@@ -38,12 +39,18 @@ class OptionMenue:
                 if self.Conf.SCALE_Y < 1:
                     cv2.setTrackbarPos("Scale Y",self.Name, 1)
                     self.Conf.SCALE_Y = 1
+                if GPU_ENABLED == 1:
+                    self.Conf.GPU_ENABLED = True
+                else:
+                    self.Conf.GPU_ENABLED = False
                 self.Conf.SaveToJSON()
                 self.Conf.SCALE_FACTOR_X = self.Conf.SCREEN_X/self.Conf.SCALE_X
                 self.Conf.SCALE_FACTOR_Y = self.Conf.SCREEN_Y/self.Conf.SCALE_Y
                 
-                self.Conf.MASK_LOWER=np.array([self.Conf.MASK_COLORS[0],self.Conf.MASK_COLORS[2],self.Conf.MASK_COLORS[4]])
-                self.Conf.MASK_UPPER=np.array([self.Conf.MASK_COLORS[1],self.Conf.MASK_COLORS[3],self.Conf.MASK_COLORS[5]])
+                # self.Conf.MASK_LOWER=np.array([self.Conf.MASK_COLORS[0],self.Conf.MASK_COLORS[2],self.Conf.MASK_COLORS[4]])
+                # self.Conf.MASK_UPPER=np.array([self.Conf.MASK_COLORS[1],self.Conf.MASK_COLORS[3],self.Conf.MASK_COLORS[5]])
+                self.Conf.MASK_LOWER = (self.Conf.MASK_COLORS[0],self.Conf.MASK_COLORS[2],self.Conf.MASK_COLORS[4], 0)
+                self.Conf.MASK_UPPER = (self.Conf.MASK_COLORS[1],self.Conf.MASK_COLORS[3],self.Conf.MASK_COLORS[5], 0)
         except:
             return;
 
@@ -60,6 +67,10 @@ class OptionMenue:
             cv2.setTrackbarPos("Val Max",self.Name, self.Conf.MASK_COLORS[5])
             cv2.setTrackbarPos("Blur",self.Name, self.Conf.BLUR)
             cv2.setTrackbarPos("Boarder Buffer",self.Name, self.Conf.BORDER_BUFFER)
+            if self.Conf.GPU_ENABLED == True:
+                cv2.setTrackbarPos("Enable GPU",self.Name, 1)
+            else:
+                cv2.setTrackbarPos("Enable GPU",self.Name, 0)
             cv2.setTrackbarPos("Reset",self.Name, 0)
             print("Reseted to: ", self.Conf.MASK_COLORS[0], self.Conf.MASK_COLORS[1], self.Conf.MASK_COLORS[2], self.Conf.MASK_COLORS[3], self.Conf.MASK_COLORS[4], self.Conf.MASK_COLORS[5], self.Conf.BLUR)
 
@@ -81,6 +92,10 @@ class OptionMenue:
             cv2.createTrackbar("Val Max",self.Name,self.Conf.MASK_COLORS[5],255, self.setTrackbarPos)
             cv2.createTrackbar("Blur",self.Name,self.Conf.BLUR,20, self.setTrackbarPos)
             cv2.createTrackbar("Boarder Buffer",self.Name, self.Conf.BORDER_BUFFER,50, self.setTrackbarPos)
+            if self.Conf.GPU_ENABLED == True:
+                cv2.createTrackbar("Enable GPU",self.Name,1,1, self.setTrackbarPos)
+            else:
+                cv2.createTrackbar("Enable GPU",self.Name,0,1, self.setTrackbarPos)
             cv2.createTrackbar("Reset",self.Name,0,1, self.Button_Reset)
             self.start = False
             

@@ -9,6 +9,7 @@ from module.threadedcamera import find_cv2_algorithm
 
 class Config:
     DEBUG = True
+    GPU_ENABLED = False
     PAINT_ENABLED = True
     CONFIG_FILE="config.conf"
     SOUND_SPRAY_FILE="sounds/spray.mp3"
@@ -31,8 +32,10 @@ class Config:
     CAMERA_FPS=60
     CV2_ALGORITHM_NUMBER=cv2.CAP_ANY
     
-    MASK_LOWER = np.array([MASK_COLORS[0],MASK_COLORS[2],MASK_COLORS[4]])
-    MASK_UPPER= np.array([MASK_COLORS[1],MASK_COLORS[3],MASK_COLORS[5]])
+    # MASK_LOWER = np.array([MASK_COLORS[0],MASK_COLORS[2],MASK_COLORS[4]])
+    # MASK_UPPER= np.array([MASK_COLORS[1],MASK_COLORS[3],MASK_COLORS[5]])
+    MASK_LOWER = (MASK_COLORS[0],MASK_COLORS[2],MASK_COLORS[4], 0)
+    MASK_UPPER = (MASK_COLORS[1],MASK_COLORS[3],MASK_COLORS[5], 0)
     
     # def <c(self):
     #     self.LoadFromJSON()
@@ -69,8 +72,10 @@ class Config:
             other = self
         other.CORNERS=self.CORNERS.copy()
         other.MASK_COLORS=self.MASK_COLORS.copy()
-        other.MASK_LOWER=np.array([self.MASK_COLORS[0],self.MASK_COLORS[2],self.MASK_COLORS[4]])
-        other.MASK_UPPER=np.array([self.MASK_COLORS[1],self.MASK_COLORS[3],self.MASK_COLORS[5]])
+        # other.MASK_LOWER=np.array([self.MASK_COLORS[0],self.MASK_COLORS[2],self.MASK_COLORS[4]])
+        # other.MASK_UPPER=np.array([self.MASK_COLORS[1],self.MASK_COLORS[3],self.MASK_COLORS[5]])
+        other.MASK_LOWER = (self.MASK_COLORS[0],self.MASK_COLORS[2],self.MASK_COLORS[4], 0)
+        other.MASK_UPPER = (self.MASK_COLORS[1],self.MASK_COLORS[3],self.MASK_COLORS[5], 0)
         return other
 
     #Save vars to config.conf file
@@ -78,6 +83,7 @@ class Config:
         data = {
             'config' : {
                 'DEBUG': self.DEBUG,
+                'GPU_ENABLED': self.GPU_ENABLED,
                 'PAINT_ENABLED' : self.PAINT_ENABLED,
                 'SCREEN_X' : self.SCREEN_X,
                 'SCREEN_Y' : self.SCREEN_Y,
@@ -109,6 +115,7 @@ class Config:
             with open(self.CONFIG_FILE) as json_file:
                 data = json.load(json_file)
                 self.DEBUG = data['config']['DEBUG']
+                self.GPU_ENABLED = data['config']['GPU_ENABLED']
                 self.PAINT_ENABLED = data['config']['PAINT_ENABLED']
                 if self.DEBUG == "true":
                     self.DEBUG = True
@@ -135,8 +142,10 @@ class Config:
                 self.SCALE_FACTOR_Y = self.SCREEN_Y/self.SCALE_Y
                 self.SPRAY_COLOUR = data['config']['SPRAY_COLOUR']
                 
-                self.MASK_LOWER=np.array([self.MASK_COLORS[0],self.MASK_COLORS[2],self.MASK_COLORS[4]])
-                self.MASK_UPPER=np.array([self.MASK_COLORS[1],self.MASK_COLORS[3],self.MASK_COLORS[5]])
+                # self.MASK_LOWER=np.array([self.MASK_COLORS[0],self.MASK_COLORS[2],self.MASK_COLORS[4]])
+                # self.MASK_UPPER=np.array([self.MASK_COLORS[1],self.MASK_COLORS[3],self.MASK_COLORS[5]])
+                self.MASK_LOWER = (self.MASK_COLORS[0],self.MASK_COLORS[2],self.MASK_COLORS[4], 0)
+                self.MASK_UPPER = (self.MASK_COLORS[1],self.MASK_COLORS[3],self.MASK_COLORS[5], 0)
         except Exception as e:
             print("The config has a wrong format. Delete the file and a new one will be generated. Error: {}" .format(e))
             self = temp_old

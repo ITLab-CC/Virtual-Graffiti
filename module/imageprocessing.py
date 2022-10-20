@@ -53,7 +53,14 @@ def Detect_blob(img, minArea = 100, gpu=False):
     if gpu:
         hcd = cv2.cuda.createHoughCirclesDetector(1, 100, 120, 10, 5, 100, 1)
         coordinates = hcd.detect(img)
-        keypoints = None
+        
+        coordinates = coordinates.download()
+        if coordinates is not None:
+            coordinates = coordinates[0]
+        else:
+            coordinates = ()
+        
+        keypoints = ()
     else:
         params = cv2.SimpleBlobDetector_Params()
         params.filterByArea = True
@@ -64,7 +71,7 @@ def Detect_blob(img, minArea = 100, gpu=False):
     return coordinates, keypoints
 
 # Write blob coordinates to img
-def Draw_coordinates(img, orgx, orgy, text, color=(255, 255, 255), gpu=False):
+def Draw_coordinates(img, orgx, orgy, text, color=(255, 255, 255)):
     return cv2.putText(img, text, (orgx+25,orgy-25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 1, cv2.LINE_AA)
 
 # Draw circle around blob
@@ -143,30 +150,36 @@ class ImageProcessing():
             return int(fps)
             
         Running = True
-        def Run(self, GPU = False):
+        def Run(self):
             while self.Running:
+                # try:
                 img, captureFps = self.cap.grap_frame() # Read img
                 if img is None:
                     continue
+                
+                gpu = self.Conf.GPU_ENABLED
 
-                if GPU:
-                    img = cv2.cuda_GpuMat(img)
+                if gpu:
+                    img = cv2.cuda_GpuMat(img)  # Uploade img to GPU
 
-                img = Resize_img(img, self.Conf.SCALE_X, self.Conf.SCALE_Y, GPU) # Resize image
+                img = Resize_img(img, self.Conf.SCALE_X, self.Conf.SCALE_Y, gpu) # Resize image
 
                 #Warp image
                 if self.Conf.Calibrate_Status == 0:
-                    img = Warp_img(img, self.Conf.CORNERS, self.Conf.SCALE_X, self.Conf.SCALE_Y, self.Conf.BORDER_BUFFER, GPU)
+                    img = Warp_img(img, self.Conf.CORNERS, self.Conf.SCALE_X, self.Conf.SCALE_Y, self.Conf.BORDER_BUFFER, gpu)
 
                 #HSV mask
-                imgHSV = HSV_img(img, GPU)
-                mask = Mask_img(imgHSV, self.Conf.MASK_LOWER, self.Conf.MASK_UPPER, GPU)
+                imgHSV = HSV_img(img, gpu)
+                mask = Mask_img(imgHSV, self.Conf.MASK_LOWER, self.Conf.MASK_UPPER, gpu)
                 
                 #Blur image
-                blur = Blur_img(mask, self.Conf.BLUR, GPU)
+                blur = Blur_img(mask, self.Conf.BLUR, gpu)
 
                 #Detect blobs.
-                self.coordinates, keypoints = Detect_blob(blur, 50, GPU)
+                self.coordinates, keypoints = Detect_blob(blur, 50, gpu)
+                
+                # print(self.coordinates)
+                # print(keypoints)
                 
                 # If no blob detected continue
                 if len(self.coordinates) == 0 and self.Conf.DEBUG == False:
@@ -174,14 +187,16 @@ class ImageProcessing():
                 
                 # Get blob size
                 self.blobSizes = []
-                if not keypoints == None:
-                    counter = 0
-                    for p in self.coordinates:
-                        self.blobSizes.append(keypoints[counter].size)
-                        counter += 1
+                for k in keypoints:
+                    self.blobSizes.append(k.size)
+                
+                if len(keypoints) == 0:
+                    for c in self.coordinates:
+                        self.blobSizes.append(50)
+                
                 
                 if self.Conf.DEBUG == True: # Draw the keypoints in image
-                    if GPU:
+                    if gpu:
                         img = img.download()
                         imgHSV = imgHSV.download()
                         mask = mask.download()
@@ -202,9 +217,14 @@ class ImageProcessing():
                     # show fps
                     fps = self.getFPS()
                     fpstext = "FPS: " + str(fps)
+                    Write_Text(mask, fpstext)
                     capturetext = "Capture: " + str(int(captureFps))
-                    Write_Text(imgHSV, fpstext)
                     Write_Text(img, capturetext)
+                    if gpu == True:
+                        gputext = "GPU: Enabled"
+                    else:
+                        gputext = "GPU: Disabled"
+                    Write_Text(blur, gputext)
 
                     # If debug mode is enabled, print image
                     try:
@@ -216,6 +236,8 @@ class ImageProcessing():
         
                 # set status to 1 -> img processing done
                 self.status = True
+                # except:
+                #     self.status = False
         
         # def grap_coordinates(self):
         #     try:
