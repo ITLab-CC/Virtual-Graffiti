@@ -301,7 +301,7 @@ $ pip install mss
 ```
 ### 4.1. Run Virtual-Graffiti
 ```
-$ sudo python Main.py
+$ python main.py
 ```
 
 # Source
