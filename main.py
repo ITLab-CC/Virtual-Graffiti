@@ -2,18 +2,13 @@ import cv2                   # OpenCV
 import numpy as np           # Create arrays
 import time                  # Mesure FPS
 from tkinter import *        # Drawing
-#import mouse                # Mouse control
-#import pyautogui as mouse    # Mouse control
-# from pynput.mouse import Button, Controller # Moving mouse
-# mouse = Controller()
-# from pymouse import PyMouse  # Moving mouse
-# mouse = PyMouse()
 
 from module.config import Config
 from module.optionmenue import OptionMenue
 from module.imageprocessing import ImageProcessing
 from module.paint import Paint
 from module.sound import Sound
+from module.mouse import Mouse
 
 global CONF
 global CONF_OLD
@@ -187,24 +182,19 @@ try:
                         if lastPos != False:
                             PAINT.createGrafittiLine(lastPos[0], lastPos[1], realX, realY, blobSize)
                             PAINT.createGrafittiLineBigger(lastPos[0], lastPos[1], realX, realY, blobSize)
+                            # PAINT.Draw(realX, realY, blobSize)
                         lastPos = (realX, realY)
-                    # else:
-                    #     mouse.move(realX, realY)
-                    #     mouse.press(realX, realY)
+                    else:
+                        Mouse.move(realX, realY)
+                        Mouse.press(realX, realY)
                     spraying = True
-                    SOUND.play()
                     # Move mouse cursor to position
-                    # #mouse.move(int(x*CONF.SCALE_FACTOR_X), int(y* CONF.SCALE_FACTOR_Y))
-                    # #mouse.moveTo(int(x*CONF.SCALE_FACTOR_X), int(y* CONF.SCALE_FACTOR_Y), duration=0)
-                    # if(MOUSE_PRESSED == 0): # Press mouse button if mouse is not pressed
-                    #     print("press")
-                    #     #mouse.press(int(x*CONF.SCALE_FACTOR_X), int(y* CONF.SCALE_FACTOR_Y))
-                    #     #mouse.press(button='left')
-                    #     #mouse.press('left')
-                    #     #mouse.press(Button.left)
-                    #     #mouse.mouseDown()
-                    #     MOUSE_PRESSED = 1
+                    if(time.time() - lastTimeInput > 0.5): # Press mouse button if mouse is not pressed
+                        Mouse.release(realX, realY)
                 counter += 1
+            
+            SOUND.play()
+            PAINT.Screen_Update()
             
             # If mouse is pressed and no blob is detected for 5 times then release mouse
             # if(MOUSE_PRESSED > 0 and len(coordinates) == 0):
