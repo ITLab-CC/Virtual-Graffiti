@@ -107,6 +107,7 @@ def getFPS():
 CONF = Config()
 CONF.LoadFromJSON()  # Load from config.conf file
 CONF_OLD = CONF.copy() # Backup conf
+MOUSE = Mouse()         # Create Objekt
 
 # Option Menue
 global OPTIONMENUE
@@ -140,9 +141,8 @@ try:
             lastTimeInput = False
             if CONF.PAINT_ENABLED:
                 lastPos = False
-            # else:
-            #     mouse.release(realX, realY)
-            # MOUSE_PRESSED = 0
+            else:
+                MOUSE.release(realX, realY)
             spraying = False
         
         # Detect blobs.
@@ -185,12 +185,9 @@ try:
                             # PAINT.Draw(realX, realY, blobSize)
                         lastPos = (realX, realY)
                     else:
-                        Mouse.move(realX, realY)
-                        Mouse.press(realX, realY)
+                        MOUSE.move(realX, realY)
+                        MOUSE.press(realX, realY)
                     spraying = True
-                    # Move mouse cursor to position
-                    if(time.time() - lastTimeInput > 0.5): # Press mouse button if mouse is not pressed
-                        Mouse.release(realX, realY)
                 counter += 1
             
             SOUND.play()
