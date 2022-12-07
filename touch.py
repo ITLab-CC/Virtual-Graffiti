@@ -90,9 +90,9 @@ def main(args):
         already_pressed_one = False
         for i in range(250):
             pc_ = pc/100
-            val_x = int(pc_*100 + (1-pc_)*1920)
-            val_y = int(pc_*100 + (1-pc_)*1920)
-            val_pres = int(pc_*10 + (1-pc_)*6000)
+            val_x = int(i*4+150)
+            val_y = int(i*4+150)
+            val_pres = int(i*55)
             print("Will send: x={}, y={}, press={} (pc={})".format(
                 val_x,
                 val_y,
