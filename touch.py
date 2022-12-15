@@ -1,3 +1,6 @@
+# https://unix.stackexchange.com/questions/508612/simulate-graphics-tablet-using-libevent
+
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import sys

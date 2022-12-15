@@ -7,7 +7,7 @@ from module.config import Config
 from module.optionmenue import OptionMenue
 from module.imageprocessing import ImageProcessing
 from module.paint import Paint
-from module.sound import Sound
+# from module.sound import Sound
 from module.mouse import Mouse
 
 global CONF
@@ -118,8 +118,8 @@ PAINT = Paint(CONF.SPRAY_COLOUR, CONF.PAINT_ENABLED)
 Paint_key_init()
 
 # Sound
-global SOUND
-SOUND = Sound(CONF.SOUND_SPRAY_FILE)
+# global SOUND
+# SOUND = Sound(CONF.SOUND_SPRAY_FILE)
 
 global IMAGEPROCESSING
 IMAGEPROCESSING = ImageProcessing(CONF, 1)
@@ -128,6 +128,8 @@ IMAGEPROCESSING = ImageProcessing(CONF, 1)
 spraying = False
 lastPos = False
 lastTimeInput = False
+blobSizeMax = 40
+blobSizeMin = 40
 # MOUSE_PRESSED = 0
     
 try:
@@ -137,12 +139,13 @@ try:
         keyinput(cv2.waitKey(1) & 0xFF)
         
         if lastTimeInput != False and time.time() - lastTimeInput > 0.1: # If no input for 0.5 seconds then stop drawing
-            SOUND.stop()
+            # SOUND.stop()
             lastTimeInput = False
             if CONF.PAINT_ENABLED:
                 lastPos = False
             else:
-                MOUSE.release(realX, realY)
+                # MOUSE.release(realX, realY)
+                MOUSE.release()
             spraying = False
         
         # Detect blobs.
@@ -153,7 +156,7 @@ try:
         # Show debug image
         if CONF.DEBUG:
             cv2.imshow('Debug', debug_img)
-            print("FPS:" + str(getFPS()))
+            # print("FPS:" + str(getFPS()))
         
         # For each blob
         if len(coordinates) != 0:
@@ -161,6 +164,10 @@ try:
             lastTimeInput = time.time()
             for p in coordinates:
                 blobSize = blobSizes[counter]
+                if (blobSize > blobSizeMax) and (blobSize < 80):
+                    blobSizeMax = blobSize
+                if (blobSize < blobSizeMin) and (blobSize > 40):
+                    blobSizeMin = blobSize
                 orgx = int(p[0])
                 orgy = int(p[1])
                 newx = CONF.SCALE_X-orgx+CONF.BORDER_BUFFER-1
@@ -185,12 +192,13 @@ try:
                             # PAINT.Draw(realX, realY, blobSize)
                         lastPos = (realX, realY)
                     else:
-                        MOUSE.move(realX, realY)
-                        MOUSE.press(realX, realY)
+                        print(blobSize)
+                        MOUSE.move(realX, realY, int(blobSize), int(blobSizeMax), int(blobSizeMin))
+                        # MOUSE.press(realX, realY)
                     spraying = True
                 counter += 1
             
-            SOUND.play()
+            # SOUND.play()
             PAINT.Screen_Update()
             
             # If mouse is pressed and no blob is detected for 5 times then release mouse
