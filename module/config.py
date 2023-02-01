@@ -6,6 +6,7 @@ from os.path import exists   # If file exists
 import numpy as np           # Create arrays
 from module.threadedcamera import find_camera
 from module.threadedcamera import find_cv2_algorithm
+import time
 
 class Config:
     DEBUG = True
@@ -21,6 +22,7 @@ class Config:
     SCALE_Y=int(SCREEN_Y/2)
     SCALE_FACTOR_X = SCREEN_X/SCALE_X
     SCALE_FACTOR_Y = SCREEN_Y/SCALE_Y
+    NUMBER_OF_POINTS_PER_LINE = 2
     CORNERS=[[77, 7], [897, 25], [81, 501], [870, 517]]
     MASK_COLORS=[0, 179, 0, 255, 0, 145]
     BLUR = 1
@@ -92,6 +94,7 @@ class Config:
                 'CAMERA_SRC' : self.CAMERA_SRC,
                 'CAMERA_FPS' : self.CAMERA_FPS,
                 'CV2_ALGORITHM_NUMBER' : self.CV2_ALGORITHM_NUMBER,
+                'NUMBER_OF_POINTS_PER_LINE' : self.NUMBER_OF_POINTS_PER_LINE,
                 'CORNERS' : self.CORNERS,
                 'MASK_COLORS' : self.MASK_COLORS,
                 'BLUR' : self.BLUR,
@@ -132,6 +135,7 @@ class Config:
                 self.CAMERA_SRC = data['config']['CAMERA_SRC']
                 self.CAMERA_FPS = data['config']['CAMERA_FPS']
                 self.CV2_ALGORITHM_NUMBER = data['config']['CV2_ALGORITHM_NUMBER']
+                self.NUMBER_OF_POINTS_PER_LINE = data['config']['NUMBER_OF_POINTS_PER_LINE']
                 self.CORNERS = data['config']['CORNERS']
                 self.MASK_COLORS = data['config']['MASK_COLORS']
                 self.BLUR = data['config']['BLUR']
@@ -150,46 +154,79 @@ class Config:
 
     #Calibration mode
     Calibrate_Status = 0
+    # self.NUMBER_OF_POINTS_PER_LINE = 3 # must be >= 2
     def Calibrate_Points(self, x=-1, y=-1):
         if x < 0:
             x = self.SCREEN_X
         if y < 0:
             y = self.SCREEN_Y
+            
+        x = self.SCALE_X-x
 
-        cal_imag = np.zeros((self.SCREEN_Y,self.SCREEN_X,3), np.uint8)
-
-        if self.Calibrate_Status == 1:
-            cv2.circle(cal_imag,(0,0), 50, (0,0,255), -1)
-            cv2.circle(cal_imag,(15,15), 15, (255,0,0), -1)
-            if((x > int(self.SCALE_X/2)) and (y < int(self.SCALE_Y/2))):
-                self.CORNERS[1][0] = x+self.BORDER_BUFFER
-                self.CORNERS[1][1] = y-self.BORDER_BUFFER
-                self.Calibrate_Status = 2
-        elif self.Calibrate_Status == 2:
-            cv2.circle(cal_imag,(self.SCREEN_X-1,0), 50, (0,0,255), -1)
-            cv2.circle(cal_imag,(self.SCREEN_X-16,15), 15, (255,0,0), -1)
-            if((x < int(self.SCALE_X/2)) and (y < int(self.SCALE_Y/2))):
-                self.CORNERS[0][0] = x-self.BORDER_BUFFER
-                self.CORNERS[0][1] = y-self.BORDER_BUFFER
-                self.Calibrate_Status = 3
-        elif self.Calibrate_Status == 3:
-            cv2.circle(cal_imag,(0,self.SCREEN_Y-1), 50, (0,0,255), -1)
-            cv2.circle(cal_imag,(15,self.SCREEN_Y-16), 15, (255,0,0), -1)
-            if((x > int(self.SCALE_X/2)) and (y > int(self.SCALE_Y/2))):
-                self.CORNERS[3][0] = x+self.BORDER_BUFFER
-                self.CORNERS[3][1] = y+self.BORDER_BUFFER
-                self.Calibrate_Status = 4
-        elif self.Calibrate_Status == 4:
-            cv2.circle(cal_imag,(self.SCREEN_X-1,self.SCREEN_Y-1), 50, (0,0,255), -1)
-            cv2.circle(cal_imag,(self.SCREEN_X-16,self.SCREEN_Y-16), 15, (255,0,0), -1)
-            if((x < int(self.SCALE_X/2)) and (y > int(self.SCALE_Y/2))):
-                self.CORNERS[2][0] = x-self.BORDER_BUFFER
-                self.CORNERS[2][1] = y+self.BORDER_BUFFER
-                self.Calibrate_Status = 0
-
+        cal_imag = np.zeros((self.SCREEN_Y,self.SCREEN_X,3), np.uint8)      #black background
+        
+        vertical =  (self.Calibrate_Status - 1) % self.NUMBER_OF_POINTS_PER_LINE # get index of vertical point
+        horizontal = int((self.Calibrate_Status -1) / self.NUMBER_OF_POINTS_PER_LINE) # round off to get index of horizontal point
+        
+        point_x = int(((self.SCREEN_X / (self.NUMBER_OF_POINTS_PER_LINE -1)) * horizontal)-1)
+        point_y = int(((self.SCREEN_Y / (self.NUMBER_OF_POINTS_PER_LINE -1)) * vertical)-1)
+        
+        buffer_X = 0
+        buffer_Y = 0
+        
+        shift_X = point_x
+        if horizontal == 0:
+            shift_X += 15
+            buffer_X -= self.BORDER_BUFFER
+        elif horizontal == self.NUMBER_OF_POINTS_PER_LINE -1:
+            shift_X -= 15
+            buffer_X += self.BORDER_BUFFER
+        shift_Y = point_y
+        if vertical == 0:
+            shift_Y += 15
+            buffer_Y -= self.BORDER_BUFFER
+        elif vertical == self.NUMBER_OF_POINTS_PER_LINE -1:
+            shift_Y -= 15
+            buffer_Y += self.BORDER_BUFFER
+        
+        cv2.circle(cal_imag,(point_x-1,point_y-1), 50, (0,0,255), -1)
+        cv2.circle(cal_imag,(shift_X,shift_Y), 15, (255,0,0), -1)
+        
+        # time.sleep(2)
+        
+        from_X = int(self.SCALE_X / self.NUMBER_OF_POINTS_PER_LINE) * (horizontal)
+        to_X = int(self.SCALE_X / self.NUMBER_OF_POINTS_PER_LINE) * (horizontal + 1)
+        from_Y = int(self.SCALE_Y / self.NUMBER_OF_POINTS_PER_LINE) * (vertical)
+        to_Y = int(self.SCALE_Y / self.NUMBER_OF_POINTS_PER_LINE) * (vertical + 1)
+        
+        # print(self.Calibrate_Status)
+        # print()
+        # print(vertical)
+        # print(horizontal)
+        # print()
+        # print(point_x)
+        # print(point_y)
+        # print()
+        # print(shift_X)
+        # print(shift_Y)
+        
+        
+        print()
+        print(str(from_X) + "->" + str(to_X))
+        print(x)
+        print()
+        print(str(from_Y) + "->" + str(to_Y))
+        print(y)
+        
+        # if((x > int(self.SCALE_X/2)) and (y < int(self.SCALE_Y/2))):
+        if (x <= to_X) and (x >= from_X) and (y <= to_Y) and (y >= from_Y):
+            self.CORNERS[self.Calibrate_Status-1][0] = x+buffer_X
+            self.CORNERS[self.Calibrate_Status-1][1] = y+buffer_Y
+            self.Calibrate_Status = self.Calibrate_Status + 1
+                
         cv2.namedWindow("Calibrate", cv2.WINDOW_NORMAL)
         cv2.setWindowProperty("Calibrate",cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
         cv2.imshow("Calibrate", cal_imag)
-        if self.Calibrate_Status == 0:
+        if self.Calibrate_Status > (self.NUMBER_OF_POINTS_PER_LINE * self.NUMBER_OF_POINTS_PER_LINE):
             self.SaveToJSON()
             cv2.destroyWindow("Calibrate")  
