@@ -1,5 +1,4 @@
 import cv2                   # OpenCV
-import numpy as np           # Create arrays
 import time                  # Mesure FPS
 from tkinter import *        # Drawing
 
@@ -128,8 +127,8 @@ IMAGEPROCESSING = ImageProcessing(CONF, 1)
 spraying = False
 lastPos = False
 lastTimeInput = False
-blobSizeMax = 40
-blobSizeMin = 40
+blobSizeMax = 60
+blobSizeMin = 15
 # MOUSE_PRESSED = 0
     
 try:
@@ -143,9 +142,9 @@ try:
             lastTimeInput = False
             if CONF.PAINT_ENABLED:
                 lastPos = False
-            else:
+            #else:
                 # MOUSE.release(realX, realY)
-                MOUSE.release()
+                #MOUSE.release()
             spraying = False
         
         # Detect blobs.
@@ -164,10 +163,11 @@ try:
             lastTimeInput = time.time()
             for p in coordinates:
                 blobSize = blobSizes[counter]
-                if (blobSize > blobSizeMax) and (blobSize < 80):
-                    blobSizeMax = blobSize
-                if (blobSize < blobSizeMin) and (blobSize > 40):
-                    blobSizeMin = blobSize
+                print(blobSize)
+                # if (blobSize > blobSizeMax) and (blobSize < 80):
+                #     blobSizeMax = blobSize
+                # if (blobSize < blobSizeMin) and (blobSize > 40):
+                #     blobSizeMin = blobSize
                 orgx = int(p[0])
                 orgy = int(p[1])
                 newx = CONF.SCALE_X-orgx+CONF.BORDER_BUFFER-1
@@ -191,9 +191,10 @@ try:
                             PAINT.createGrafittiLineBigger(lastPos[0], lastPos[1], realX, realY, blobSize)
                             # PAINT.Draw(realX, realY, blobSize)
                         lastPos = (realX, realY)
-                    else:
-                        print(blobSize)
-                        MOUSE.move(realX, realY, int(blobSize), int(blobSizeMax), int(blobSizeMin))
+                    #else:
+                        #if spraying == False:
+                            #MOUSE.press(realX, realY)
+                        #MOUSE.move(realX, realY, int(blobSize), int(blobSizeMax), int(blobSizeMin), Config.SCREEN_X/2)
                         # MOUSE.press(realX, realY)
                     spraying = True
                 counter += 1

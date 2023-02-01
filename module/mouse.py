@@ -55,36 +55,43 @@ class Mouse:
         ])
             
     
-    def move(self, x, y, pressure, sizeMax, sizeMin):
-        if (pressure > 80):
-            pressure = 80
-        if (pressure < 40):
-            pressure = 40
-        pressure = (sizeMin + sizeMax) - pressure        # invert min and max == (min + max) - wert
-        sizeMax -= sizeMin
-        pressure -= sizeMax
-        factor = 8191 / sizeMax
-        # if pressure < 30:
-        #     pressure = 30
-        # self.dev.enable(libevdev.EV_ABS.ABS_PRESSURE,
-        #         libevdev.InputAbsInfo(minimum=0, maximum=8191)) 
+    def move(self, x, y, blobSize, sizeMax, sizeMin, screen_X):
+        if (blobSize > sizeMax):
+            blobSize = sizeMax
+        if (blobSize < sizeMin):
+            blobSize = sizeMin
+        
+        if x > screen_X:        # funktion um alles von rechts nach links zu klappen
+            # factor_X = screen_X - (x - screen_X)
+            factor = (30 / screen_X)*(screen_X - (x - screen_X))    # 30 == verschiebung
+        else:
+            factor = (30/screen_X)*x
+        
+        # pressure = (8191/15)*(blobSize - factor-sizeMin)
+        # pressure = 546.07*(blobSize - factor-sizeMin) # hier fehlt das inventieren der Blobsize
+        pressure = 546.07*(sizeMax + sizeMin - blobSize - factor) # 546 == 8191/15 == maxpressure / maxblobsize(from 0 to z)
+        # print(sizeMax + sizeMin - blobSize - factor)
+        # print(factor-blobSize)
+        if pressure < 0:
+            pressure = 0
         # print(pressure)
-        print()
+        # print()
+        
         self.uinput.send_events([
             libevdev.InputEvent(libevdev.EV_ABS.ABS_X,
                                 value=x),
             libevdev.InputEvent(libevdev.EV_ABS.ABS_Y,
                                 value=y),
             libevdev.InputEvent(libevdev.EV_ABS.ABS_PRESSURE,
-                                value= int(pressure * factor)),
+                                value= int(pressure)),
             libevdev.InputEvent(libevdev.EV_KEY.BTN_TOUCH,
-                                value=1),
+                                value=1),   # normal 1
             libevdev.InputEvent(libevdev.EV_KEY.BTN_STYLUS,
                                 value=0),
             libevdev.InputEvent(libevdev.EV_KEY.BTN_STYLUS2,
                                 value=0),
             libevdev.InputEvent(libevdev.EV_KEY.BTN_TOOL_PEN,
-                                value=1),
+                                value=1),   # normal 1
             libevdev.InputEvent(libevdev.EV_SYN.SYN_REPORT,
                                 value=0),
             ])
@@ -93,10 +100,14 @@ class Mouse:
         # print("Press!")
         self.uinput.send_events([
             # Pen close to device
+            libevdev.InputEvent(libevdev.EV_ABS.ABS_X,
+                                value=x),
+            libevdev.InputEvent(libevdev.EV_ABS.ABS_Y,
+                                value=y),
             libevdev.InputEvent(libevdev.EV_KEY.BTN_TOOL_PEN,
-                                value=1),
+                                value=0),   #1
             libevdev.InputEvent(libevdev.EV_KEY.BTN_TOUCH,
-                                value=1),
+                                value=0),   #1
             libevdev.InputEvent(libevdev.EV_SYN.SYN_REPORT,
                                 value=0),
         ])       
