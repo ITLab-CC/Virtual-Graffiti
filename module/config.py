@@ -22,8 +22,8 @@ class Config:
     SCALE_Y=int(SCREEN_Y/2)
     SCALE_FACTOR_X = SCREEN_X/SCALE_X
     SCALE_FACTOR_Y = SCREEN_Y/SCALE_Y
-    NUMBER_OF_POINTS_PER_LINE = 2
-    CORNERS=[[77, 7], [897, 25], [81, 501], [870, 517]]
+    NUMBER_OF_CALIBRATION_POINTS_PER_LINE = 2
+    CALIBRATION_POINTS=[[77, 7], [897, 25], [81, 501], [870, 517]]
     MASK_COLORS=[0, 179, 0, 255, 0, 145]
     BLUR = 1
     BORDER_BUFFER=20
@@ -70,7 +70,7 @@ class Config:
             other = Config()
         else:
             other = self
-        other.CORNERS=self.CORNERS.copy()
+        other.CALIBRATION_POINTS=self.CALIBRATION_POINTS.copy()
         other.MASK_COLORS=self.MASK_COLORS.copy()
         # other.MASK_LOWER=np.array([self.MASK_COLORS[0],self.MASK_COLORS[2],self.MASK_COLORS[4]])
         # other.MASK_UPPER=np.array([self.MASK_COLORS[1],self.MASK_COLORS[3],self.MASK_COLORS[5]])
@@ -94,8 +94,8 @@ class Config:
                 'CAMERA_SRC' : self.CAMERA_SRC,
                 'CAMERA_FPS' : self.CAMERA_FPS,
                 'CV2_ALGORITHM_NUMBER' : self.CV2_ALGORITHM_NUMBER,
-                'NUMBER_OF_POINTS_PER_LINE' : self.NUMBER_OF_POINTS_PER_LINE,
-                'CORNERS' : self.CORNERS,
+                'NUMBER_OF_CALIBRATION_POINTS_PER_LINE' : self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE,
+                'CALIBRATION_POINTS' : self.CALIBRATION_POINTS,
                 'MASK_COLORS' : self.MASK_COLORS,
                 'BLUR' : self.BLUR,
                 'BORDER_BUFFER' : self.BORDER_BUFFER,
@@ -135,8 +135,8 @@ class Config:
                 self.CAMERA_SRC = data['config']['CAMERA_SRC']
                 self.CAMERA_FPS = data['config']['CAMERA_FPS']
                 self.CV2_ALGORITHM_NUMBER = data['config']['CV2_ALGORITHM_NUMBER']
-                self.NUMBER_OF_POINTS_PER_LINE = data['config']['NUMBER_OF_POINTS_PER_LINE']
-                self.CORNERS = data['config']['CORNERS']
+                self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE = data['config']['NUMBER_OF_CALIBRATION_POINTS_PER_LINE']
+                self.CALIBRATION_POINTS = data['config']['CALIBRATION_POINTS']
                 self.MASK_COLORS = data['config']['MASK_COLORS']
                 self.BLUR = data['config']['BLUR']
                 self.BORDER_BUFFER = data['config']['BORDER_BUFFER']
@@ -148,28 +148,33 @@ class Config:
                 # self.MASK_UPPER=np.array([self.MASK_COLORS[1],self.MASK_COLORS[3],self.MASK_COLORS[5]])
                 self.MASK_LOWER = (self.MASK_COLORS[0],self.MASK_COLORS[2],self.MASK_COLORS[4], 0)
                 self.MASK_UPPER = (self.MASK_COLORS[1],self.MASK_COLORS[3],self.MASK_COLORS[5], 0)
+                
+                if self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE * self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE != len(self.CALIBRATION_POINTS):
+                    print("The config has a wrong format. Delete the file and a new one will be generated.")
+                    self = temp_old
         except Exception as e:
             print("The config has a wrong format. Delete the file and a new one will be generated. Error: {}" .format(e))
             self = temp_old
 
     #Calibration mode
     Calibrate_Status = 0
-    # self.NUMBER_OF_POINTS_PER_LINE = 3 # must be >= 2
+    # self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE = 3 # must be >= 2
     def Calibrate_Points(self, x=-1, y=-1):
-        if x < 0:
+        if x == -1 | y == -1:
             x = self.SCREEN_X
-        if y < 0:
             y = self.SCREEN_Y
+            self.CALIBRATION_POINTS.clear()
+            self.CALIBRATION_POINTSTION_POINTS = [] * self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE
             
-        x = self.SCALE_X-x
+        x = self.SCALE_X-x # mirror cordinate x
 
         cal_imag = np.zeros((self.SCREEN_Y,self.SCREEN_X,3), np.uint8)      #black background
         
-        vertical =  (self.Calibrate_Status - 1) % self.NUMBER_OF_POINTS_PER_LINE # get index of vertical point
-        horizontal = int((self.Calibrate_Status -1) / self.NUMBER_OF_POINTS_PER_LINE) # round off to get index of horizontal point
+        vertical =  (self.Calibrate_Status - 1) % self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE # get index of vertical point
+        horizontal = int((self.Calibrate_Status -1) / self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE) # round off to get index of horizontal point
         
-        point_x = int(((self.SCREEN_X / (self.NUMBER_OF_POINTS_PER_LINE -1)) * horizontal)-1)
-        point_y = int(((self.SCREEN_Y / (self.NUMBER_OF_POINTS_PER_LINE -1)) * vertical)-1)
+        point_x = int(((self.SCREEN_X / (self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE -1)) * horizontal)-1)
+        point_y = int(((self.SCREEN_Y / (self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE -1)) * vertical)-1)
         
         buffer_X = 0
         buffer_Y = 0
@@ -178,14 +183,14 @@ class Config:
         if horizontal == 0:
             shift_X += 15
             buffer_X -= self.BORDER_BUFFER
-        elif horizontal == self.NUMBER_OF_POINTS_PER_LINE -1:
+        elif horizontal == self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE -1:
             shift_X -= 15
             buffer_X += self.BORDER_BUFFER
         shift_Y = point_y
         if vertical == 0:
             shift_Y += 15
             buffer_Y -= self.BORDER_BUFFER
-        elif vertical == self.NUMBER_OF_POINTS_PER_LINE -1:
+        elif vertical == self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE -1:
             shift_Y -= 15
             buffer_Y += self.BORDER_BUFFER
         
@@ -194,10 +199,10 @@ class Config:
         
         # time.sleep(2)
         
-        from_X = int(self.SCALE_X / self.NUMBER_OF_POINTS_PER_LINE) * (horizontal)
-        to_X = int(self.SCALE_X / self.NUMBER_OF_POINTS_PER_LINE) * (horizontal + 1)
-        from_Y = int(self.SCALE_Y / self.NUMBER_OF_POINTS_PER_LINE) * (vertical)
-        to_Y = int(self.SCALE_Y / self.NUMBER_OF_POINTS_PER_LINE) * (vertical + 1)
+        from_X = int(self.SCALE_X / self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE) * (horizontal)
+        to_X = int(self.SCALE_X / self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE) * (horizontal + 1)
+        from_Y = int(self.SCALE_Y / self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE) * (vertical)
+        to_Y = int(self.SCALE_Y / self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE) * (vertical + 1)
         
         # print(self.Calibrate_Status)
         # print()
@@ -218,15 +223,15 @@ class Config:
         print(str(from_Y) + "->" + str(to_Y))
         print(y)
         
-        # if((x > int(self.SCALE_X/2)) and (y < int(self.SCALE_Y/2))):
         if (x <= to_X) and (x >= from_X) and (y <= to_Y) and (y >= from_Y):
-            self.CORNERS[self.Calibrate_Status-1][0] = x+buffer_X
-            self.CORNERS[self.Calibrate_Status-1][1] = y+buffer_Y
+            self.CALIBRATION_POINTS.append([x+buffer_X,y+buffer_Y])
+            # self.CALIBRATION_POINTS[self.Calibrate_Status-1][0] = x+buffer_X
+            # self.CALIBRATION_POINTS[self.Calibrate_Status-1][1] = y+buffer_Y
             self.Calibrate_Status = self.Calibrate_Status + 1
                 
         cv2.namedWindow("Calibrate", cv2.WINDOW_NORMAL)
         cv2.setWindowProperty("Calibrate",cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
         cv2.imshow("Calibrate", cal_imag)
-        if self.Calibrate_Status > (self.NUMBER_OF_POINTS_PER_LINE * self.NUMBER_OF_POINTS_PER_LINE):
+        if self.Calibrate_Status > (self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE * self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE):
             self.SaveToJSON()
             cv2.destroyWindow("Calibrate")  

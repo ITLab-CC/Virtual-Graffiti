@@ -166,7 +166,16 @@ class ImageProcessing():
 
                 #Warp image
                 if self.Conf.Calibrate_Status == 0:
-                    img = Warp_img(img, self.Conf.CORNERS, self.Conf.SCALE_X, self.Conf.SCALE_Y, self.Conf.BORDER_BUFFER, gpu)
+                    number_of_points = self.Conf.NUMBER_OF_CALIBRATION_POINTS_PER_LINE * self.Conf.NUMBER_OF_CALIBRATION_POINTS_PER_LINE # 16
+                    corners = [] * 4
+                    corners.clear()
+                    corners = [
+                        self.Conf.CALIBRATION_POINTS[0],                                                       # 0
+                        self.Conf.CALIBRATION_POINTS[self.Conf.NUMBER_OF_CALIBRATION_POINTS_PER_LINE - 1],                 # 4-1=3
+                        self.Conf.CALIBRATION_POINTS[number_of_points - self.Conf.NUMBER_OF_CALIBRATION_POINTS_PER_LINE],  # 16-4=11
+                        self.Conf.CALIBRATION_POINTS[number_of_points-1]                                       # 16-1=15
+                        ]
+                    img = Warp_img(img, corners, self.Conf.SCALE_X, self.Conf.SCALE_Y, self.Conf.BORDER_BUFFER, gpu)
 
                 #HSV mask
                 imgHSV = HSV_img(img, gpu)
