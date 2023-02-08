@@ -176,6 +176,7 @@ class Config:
         x = self.SCALE_X-x # mirror cordinate x
 
         cal_imag = np.zeros((self.SCREEN_Y,self.SCREEN_X,3), np.uint8)      #black background
+        cal_imag.fill(255)
         
         vertical =  (self.Calibrate_Status - 1) % self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE # get index of vertical point
         horizontal = int((self.Calibrate_Status -1) / self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE) # round off to get index of horizontal point
