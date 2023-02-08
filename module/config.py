@@ -33,14 +33,8 @@ class Config:
     CAMERA_SRC=0
     CAMERA_FPS=60
     CV2_ALGORITHM_NUMBER=cv2.CAP_ANY
-    
-    # MASK_LOWER = np.array([MASK_COLORS[0],MASK_COLORS[2],MASK_COLORS[4]])
-    # MASK_UPPER= np.array([MASK_COLORS[1],MASK_COLORS[3],MASK_COLORS[5]])
     MASK_LOWER = (MASK_COLORS[0],MASK_COLORS[2],MASK_COLORS[4], 0)
     MASK_UPPER = (MASK_COLORS[1],MASK_COLORS[3],MASK_COLORS[5], 0)
-    
-    # def <c(self):
-    #     self.LoadFromJSON()
     
     def autodetect(self):
         #Get screen size
@@ -51,9 +45,6 @@ class Config:
         except:
             self.SCREEN_X=1920
             self.SCREEN_Y=1080
-            
-        #Get camera size
-        # ... TODO
         
         #find camera
         devices = find_camera()
@@ -64,8 +55,6 @@ class Config:
         algo = find_cv2_algorithm(3)
         if algo[0][2] > 0:
             self.CV2_ALGORITHM_NUMBER=algo[0][0]
-        
-                
             
     def copy(self, other=None):
         if not(isinstance(other,Config)) or other==None:
@@ -74,8 +63,6 @@ class Config:
             other = self
         other.CALIBRATION_POINTS=self.CALIBRATION_POINTS.copy()
         other.MASK_COLORS=self.MASK_COLORS.copy()
-        # other.MASK_LOWER=np.array([self.MASK_COLORS[0],self.MASK_COLORS[2],self.MASK_COLORS[4]])
-        # other.MASK_UPPER=np.array([self.MASK_COLORS[1],self.MASK_COLORS[3],self.MASK_COLORS[5]])
         other.MASK_LOWER = (self.MASK_COLORS[0],self.MASK_COLORS[2],self.MASK_COLORS[4], 0)
         other.MASK_UPPER = (self.MASK_COLORS[1],self.MASK_COLORS[3],self.MASK_COLORS[5], 0)
         return other
@@ -145,9 +132,6 @@ class Config:
                 self.SCALE_FACTOR_X = self.SCREEN_X/self.SCALE_X
                 self.SCALE_FACTOR_Y = self.SCREEN_Y/self.SCALE_Y
                 self.SPRAY_COLOUR = data['config']['SPRAY_COLOUR']
-                
-                # self.MASK_LOWER=np.array([self.MASK_COLORS[0],self.MASK_COLORS[2],self.MASK_COLORS[4]])
-                # self.MASK_UPPER=np.array([self.MASK_COLORS[1],self.MASK_COLORS[3],self.MASK_COLORS[5]])
                 self.MASK_LOWER = (self.MASK_COLORS[0],self.MASK_COLORS[2],self.MASK_COLORS[4], 0)
                 self.MASK_UPPER = (self.MASK_COLORS[1],self.MASK_COLORS[3],self.MASK_COLORS[5], 0)
                 
@@ -227,8 +211,6 @@ class Config:
         
         if (x <= to_X) and (x >= from_X) and (y <= to_Y) and (y >= from_Y):
             self.CALIBRATION_POINTS.append([x+buffer_X,y+buffer_Y])
-            # self.CALIBRATION_POINTS[self.Calibrate_Status-1][0] = x+buffer_X
-            # self.CALIBRATION_POINTS[self.Calibrate_Status-1][1] = y+buffer_Y
             self.Calibrate_Status = self.Calibrate_Status + 1
                 
         cv2.namedWindow("Calibrate", cv2.WINDOW_NORMAL)
