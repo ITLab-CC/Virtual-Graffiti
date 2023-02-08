@@ -7,11 +7,13 @@ import numpy as np           # Create arrays
 from module.threadedcamera import find_camera
 from module.threadedcamera import find_cv2_algorithm
 import time
+import tkinter as tk
+from tkinter import simpledialog
 
 class Config:
     DEBUG = True
     GPU_ENABLED = False
-    PAINT_ENABLED = True
+    PAINT_ENABLED = False
     CONFIG_FILE="config.conf"
     SOUND_SPRAY_FILE="sounds/spray.mp3"
     SCREEN_X=1920
@@ -155,14 +157,35 @@ class Config:
         except Exception as e:
             print("The config has a wrong format. Delete the file and a new one will be generated. Error: {}" .format(e))
             self = temp_old
-
+    
     #Calibration mode
     Calibrate_Status = 0
     # self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE = 3 # must be >= 2
     def Calibrate_Points(self, x=-1, y=-1):
-        if x == -1 | y == -1:
+        if x < 0 or y < 0: # first call
             x = self.SCREEN_X
             y = self.SCREEN_Y
+            root = tk.Tk()
+            root.withdraw()
+            while True:
+                result = simpledialog.askstring("Input", "Geben Sie eine Zahl zwischen 2 und 10 ein:", parent=root)
+                if result is None:
+                    break
+                if not result.isdigit():
+                    tk.messagebox.showerror("Error", "Bitte geben Sie eine gültige Zahl ein.")
+                    continue
+                result = int(result)
+                if result < 2 or result > 10:
+                    tk.messagebox.showerror("Error", "Bitte geben Sie eine Zahl zwischen 2 und 10 ein.")
+                    continue
+                break
+            root.destroy()
+            if result is None:
+                self.Calibrate_Status = 0
+                return 
+            
+            self.Calibrate_Status = 1
+            self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE = result
             self.CALIBRATION_POINTS.clear()
             self.CALIBRATION_POINTSTION_POINTS = [] * self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE
             
@@ -197,31 +220,10 @@ class Config:
         cv2.circle(cal_imag,(point_x-1,point_y-1), 50, (0,0,255), -1)
         cv2.circle(cal_imag,(shift_X,shift_Y), 15, (255,0,0), -1)
         
-        # time.sleep(2)
-        
         from_X = int(self.SCALE_X / self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE) * (horizontal)
         to_X = int(self.SCALE_X / self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE) * (horizontal + 1)
         from_Y = int(self.SCALE_Y / self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE) * (vertical)
         to_Y = int(self.SCALE_Y / self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE) * (vertical + 1)
-        
-        # print(self.Calibrate_Status)
-        # print()
-        # print(vertical)
-        # print(horizontal)
-        # print()
-        # print(point_x)
-        # print(point_y)
-        # print()
-        # print(shift_X)
-        # print(shift_Y)
-        
-        
-        print()
-        print(str(from_X) + "->" + str(to_X))
-        print(x)
-        print()
-        print(str(from_Y) + "->" + str(to_Y))
-        print(y)
         
         if (x <= to_X) and (x >= from_X) and (y <= to_Y) and (y >= from_Y):
             self.CALIBRATION_POINTS.append([x+buffer_X,y+buffer_Y])
