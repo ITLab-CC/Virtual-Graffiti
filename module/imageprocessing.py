@@ -13,6 +13,31 @@ def Resize_img(img, x, y, gpu=False):
     else: # cpu
         return cv2.resize(img,(x, y),interpolation=cv2.INTER_LINEAR) # Resize image
 
+# Undistort img
+def Undistort_img(img, number_of_calibration_points_per_line, calibration_points, gpu=False):
+        if gpu:
+            return img
+        else:
+            # cordinates of the calibration points
+            objp = np.zeros((int(number_of_calibration_points_per_line*number_of_calibration_points_per_line),3), np.float32)
+            objp[:,:2] = np.mgrid[0:number_of_calibration_points_per_line,0:number_of_calibration_points_per_line].T.reshape(-1,2)
+            
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+            # list of found objects
+            objpoints = []
+            imgpoints = []
+
+
+            objpoints.append(objp)
+            imgpoints.append(np.array(calibration_points).astype(np.float32)) 
+
+            # Calculate intrinsic and extrinsic parameters of the camera
+            ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
+
+            # Remove distortion from the image
+            return cv2.undistort(img, mtx, dist, None, mtx)
+        
 # Warp img
 def Warp_img(img, corners, scale_x, scale_y, boarder_buffer, gpu=False):
     pts1 = np.float32(corners)
@@ -163,7 +188,7 @@ class ImageProcessing():
                     img = cv2.cuda_GpuMat(img)  # Uploade img to GPU
 
                 img = Resize_img(img, self.Conf.SCALE_X, self.Conf.SCALE_Y, gpu) # Resize image
-
+                
                 #Warp image
                 if self.Conf.Calibrate_Status == 0:
                     number_of_points = self.Conf.NUMBER_OF_CALIBRATION_POINTS_PER_LINE * self.Conf.NUMBER_OF_CALIBRATION_POINTS_PER_LINE # 16
@@ -175,6 +200,7 @@ class ImageProcessing():
                         self.Conf.CALIBRATION_POINTS[self.Conf.NUMBER_OF_CALIBRATION_POINTS_PER_LINE - 1],                 # 4-1=3
                         self.Conf.CALIBRATION_POINTS[number_of_points-1]                                       # 16-1=15
                         ]
+                    img = Undistort_img(img, self.Conf.NUMBER_OF_CALIBRATION_POINTS_PER_LINE, self.Conf.CALIBRATION_POINTS, gpu)
                     img = Warp_img(img, corners, self.Conf.SCALE_X, self.Conf.SCALE_Y, self.Conf.BORDER_BUFFER, gpu)
 
                 #HSV mask
