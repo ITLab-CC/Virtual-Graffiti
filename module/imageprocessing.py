@@ -105,6 +105,10 @@ def Detect_blob(img, minArea = 100, gpu=False):
 def Draw_coordinates(img, orgx, orgy, text, color=(255, 255, 255)):
     return cv2.putText(img, text, (orgx+25,orgy-25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 1, cv2.LINE_AA)
 
+# Write blob coordinates to img
+def Draw_blobsize(img, orgx, orgy, text, color=(255, 255, 255)):
+    return cv2.putText(img, text, (orgx+25,orgy+25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 1, cv2.LINE_AA)
+
 # Draw circle around blob
 Blank = np.zeros((1, 1))
 def Draw_blobs(img, keypoints, color=(255, 255, 255)):
@@ -247,6 +251,7 @@ class ImageProcessing():
                         mask = mask.download()
                         blur = blur.download()
                     
+                    count = 0
                     for p in self.coordinates:
                         orgx = int(p[0])
                         orgy = int(p[1])
@@ -255,7 +260,10 @@ class ImageProcessing():
                         realX = int(newx*self.Conf.SCALE_FACTOR_X)
                         realY = int(newy*self.Conf.SCALE_FACTOR_Y)
                         text = str(realX) + "|" + str(realY)
-                        img = Draw_coordinates(img, orgx, orgy, text, (255, 255, 255))
+                        img = Draw_coordinates(img, orgx, orgy, text, (255, 255, 255))  # Draw coordinates
+                        textblobsize = str(round(self.blobSizes[count], 2))
+                        img = Draw_blobsize(img, orgx, orgy, textblobsize, (255, 255, 255))  # Draw blob size
+                        count+=1
                     
                     img = Draw_blobs(img, keypoints, (255, 255, 255))
                     

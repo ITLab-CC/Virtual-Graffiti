@@ -163,7 +163,7 @@ try:
             lastTimeInput = time.time()
             for p in coordinates:
                 blobSize = blobSizes[counter]
-                print(blobSize)
+                # print(blobSize)
                 # if (blobSize > blobSizeMax) and (blobSize < 80):
                 #     blobSizeMax = blobSize
                 # if (blobSize < blobSizeMin) and (blobSize > 40):
