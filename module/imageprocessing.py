@@ -14,27 +14,33 @@ def Resize_img(img, x, y, gpu=False):
         return cv2.resize(img,(x, y),interpolation=cv2.INTER_LINEAR) # Resize image
 
 # Undistort img
-def Undistort_img(img, number_of_calibration_points_per_line, calibration_points, gpu=False):
+mtx = [[]]
+dist = [[]]
+runcalculate = True
+def Calculate_Undistort(img, number_of_calibration_points_per_line, calibration_points):
+    # cordinates of the calibration points
+    objp = np.zeros((int(number_of_calibration_points_per_line*number_of_calibration_points_per_line),3), np.float32)
+    objp[:,:2] = np.mgrid[0:number_of_calibration_points_per_line,0:number_of_calibration_points_per_line].T.reshape(-1,2)
+
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    # list of found objects
+    objpoints = []
+    imgpoints = []
+
+
+    objpoints.append(objp)
+    imgpoints.append(np.array(calibration_points).astype(np.float32)) 
+
+    # Calculate intrinsic and extrinsic parameters of the camera
+    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
+    return mtx, dist
+
+
+def Undistort_img(img, mtx, dist, gpu=False):
         if gpu:
             return img
         else:
-            # cordinates of the calibration points
-            objp = np.zeros((int(number_of_calibration_points_per_line*number_of_calibration_points_per_line),3), np.float32)
-            objp[:,:2] = np.mgrid[0:number_of_calibration_points_per_line,0:number_of_calibration_points_per_line].T.reshape(-1,2)
-            
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-            # list of found objects
-            objpoints = []
-            imgpoints = []
-
-
-            objpoints.append(objp)
-            imgpoints.append(np.array(calibration_points).astype(np.float32)) 
-
-            # Calculate intrinsic and extrinsic parameters of the camera
-            ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
-
             # Remove distortion from the image
             return cv2.undistort(img, mtx, dist, None, mtx)
         
@@ -175,6 +181,8 @@ class ImageProcessing():
             return int(fps)
             
         Running = True
+        MX = []
+        DIST = []
         def Run(self):
             while self.Running:
                 # try:
@@ -200,7 +208,9 @@ class ImageProcessing():
                         self.Conf.CALIBRATION_POINTS[self.Conf.NUMBER_OF_CALIBRATION_POINTS_PER_LINE - 1],                 # 4-1=3
                         self.Conf.CALIBRATION_POINTS[number_of_points-1]                                       # 16-1=15
                         ]
-                    img = Undistort_img(img, self.Conf.NUMBER_OF_CALIBRATION_POINTS_PER_LINE, self.Conf.CALIBRATION_POINTS, gpu)
+                    if len(self.MX) == 0 or len(self.DIST) == 0:
+                        self.MX, self.DIST = Calculate_Undistort(img, self.Conf.NUMBER_OF_CALIBRATION_POINTS_PER_LINE, self.Conf.CALIBRATION_POINTS)
+                    img = Undistort_img(img, self.MX, self.DIST, gpu)
                     img = Warp_img(img, corners, self.Conf.SCALE_X, self.Conf.SCALE_Y, self.Conf.BORDER_BUFFER, gpu)
 
                 #HSV mask
