@@ -146,21 +146,21 @@ class Config:
     Calibrate_Status = 0
     # self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE = 3 # must be >= 2
     def Calibrate_Points(self, x=-1, y=-1):
-        if x < 0 or y < 0: # first call
+        if x == -1 and y == -1: # first call
             x = self.SCREEN_X
             y = self.SCREEN_Y
             root = tk.Tk()
             root.withdraw()
             while True:
-                result = simpledialog.askstring("Input", "Geben Sie eine Zahl zwischen 2 und 10 ein:", parent=root)
+                result = simpledialog.askstring("Input", "Enter a number between 2 and 10:", parent=root)
                 if result is None:
                     break
                 if not result.isdigit():
-                    tk.messagebox.showerror("Error", "Bitte geben Sie eine gültige Zahl ein.")
+                    tk.messagebox.showerror("Error", "Please enter a valid number.")
                     continue
                 result = int(result)
                 if result < 2 or result > 10:
-                    tk.messagebox.showerror("Error", "Bitte geben Sie eine Zahl zwischen 2 und 10 ein.")
+                    tk.messagebox.showerror("Error", "Please enter a number between 2 and 10.")
                     continue
                 break
             root.destroy()
@@ -202,21 +202,27 @@ class Config:
             shift_Y -= 15
             buffer_Y += self.BORDER_BUFFER
         
-        cv2.circle(cal_imag,(point_x-1,point_y-1), 50, (0,0,255), -1)
-        cv2.circle(cal_imag,(shift_X,shift_Y), 15, (255,0,0), -1)
-        
         from_X = int(self.SCALE_X / self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE) * (horizontal)
         to_X = int(self.SCALE_X / self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE) * (horizontal + 1)
         from_Y = int(self.SCALE_Y / self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE) * (vertical)
         to_Y = int(self.SCALE_Y / self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE) * (vertical + 1)
-        
-        if (x <= to_X) and (x >= from_X) and (y <= to_Y) and (y >= from_Y):
-            self.CALIBRATION_POINTS.append([x+buffer_X,y+buffer_Y])
-            self.Calibrate_Status = self.Calibrate_Status + 1
+                
+                
+        cv2.circle(cal_imag,(point_x-1,point_y-1), 50, (0,0,255), -1)
+        cv2.circle(cal_imag,(shift_X,shift_Y), 15, (255,0,0), -1)
                 
         cv2.namedWindow("Calibrate", cv2.WINDOW_NORMAL)
         cv2.setWindowProperty("Calibrate",cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
         cv2.imshow("Calibrate", cal_imag)
+        
+        if (x <= to_X) and (x >= from_X) and (y <= to_Y) and (y >= from_Y):
+            # self.CALIBRATION_POINTS.append([x+buffer_X,y+buffer_Y])
+            self.CALIBRATION_POINTS.append([x,y])
+            self.Calibrate_Status = self.Calibrate_Status + 1
+            self.Calibrate_Points(-2, -2)    # Update the drawd points
+            if(self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE > 6):
+                tk.messagebox.showerror("Info", "Press enter to continue!") # wait for enter
+           
         if self.Calibrate_Status > (self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE * self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE):
             self.SaveToJSON()
             cv2.destroyWindow("Calibrate")  

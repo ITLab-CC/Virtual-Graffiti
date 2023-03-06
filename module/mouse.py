@@ -1,125 +1,132 @@
+# https://gitlab.freedesktop.org/libevdev/python-libevdev/-/blob/master/examples/fake-tablet.py
+# #!/usr/bin/env python3
+#
+# Fake tablet emulator
+
+import sys
 import libevdev
+from libevdev import InputEvent, InputAbsInfo
+import time
 
 class Mouse:
-    
-    def __init__(self):
+    def __init__(self, screen_x, screen_y):
         self.dev = libevdev.Device()
-        self.dev.name = "Tablet alone"
-        # Say that the device will send "absolute" values
-        self.dev.enable(libevdev.INPUT_PROP_DIRECT)
-        # Say that we are using the pen (not the erasor), and should be set to 1 when we are at proximity to the device.
-        # See http://www.infradead.org/~mchehab/kernel_docs_pdf/linux-input.pdf page 9 (=13) and guidelines page 12 (=16), or the https://github.com/linuxwacom/input-wacom/blob/master/4.5/wacom_w8001.c (rdy=proximity)
+        self.dev.name = "Wacom Cintiq Pro 16 Pen"
+        self.dev.id = {'bustype': 0x3,
+                'vendor': 0x56a,
+                'product': 0x350,
+                'version': 0xb}
         self.dev.enable(libevdev.EV_KEY.BTN_TOOL_PEN)
-        self.dev.enable(libevdev.EV_KEY.BTN_TOOL_RUBBER)
-        # Click
-        self.dev.enable(libevdev.EV_KEY.BTN_TOUCH)
-        # Press button 1 on pen
-        self.dev.enable(libevdev.EV_KEY.BTN_STYLUS)
-        # Press button 2 on pen, see great doc
-        self.dev.enable(libevdev.EV_KEY.BTN_STYLUS2)
-        # Send absolute X coordinate
-        self.dev.enable(libevdev.EV_ABS.ABS_X,
-                libevdev.InputAbsInfo(minimum=0, maximum=1920, resolution=100))
-        # Send absolute Y coordinate
-        self.dev.enable(libevdev.EV_ABS.ABS_Y,
-                libevdev.InputAbsInfo(minimum=0, maximum=1080, resolution=100))
-        # Send absolute pressure
-        self.dev.enable(libevdev.EV_ABS.ABS_PRESSURE,
-                libevdev.InputAbsInfo(minimum=0, maximum=8191))    
-                
-        # Use to confirm that we finished to send the informations
-        # (to be sent after every burst of information, otherwise
-        # the kernel does not proceed the information)
-        self.dev.enable(libevdev.EV_SYN.SYN_REPORT)
-        # Report buffer overflow
-        self.dev.enable(libevdev.EV_SYN.SYN_DROPPED)
-        self.uinput = self.dev.create_uinput_device()
-        self.uinput.send_events([
-            libevdev.InputEvent(libevdev.EV_KEY.BTN_TOUCH,
-                                value=0),
-            libevdev.InputEvent(libevdev.EV_KEY.BTN_TOOL_PEN,
-                                value=1),
-            libevdev.InputEvent(libevdev.EV_SYN.SYN_REPORT,
-                                value=0),
-        ])
-        # Says that the pen it out of range of the tablet. Useful
-        # to make sure you can move your mouse, and to avoid
-        # strange things during the first draw.
-        self.uinput.send_events([
-            libevdev.InputEvent(libevdev.EV_KEY.BTN_TOUCH,
-                                value=0),
-            libevdev.InputEvent(libevdev.EV_KEY.BTN_TOOL_PEN,
-                                value=0),
-            libevdev.InputEvent(libevdev.EV_SYN.SYN_REPORT,
-                                value=0),
-        ])
+        # self.dev.enable(libevdev.EV_KEY.BTN_TOOL_RUBBER)
+        # self.dev.enable(libevdev.EV_KEY.BTN_TOOL_BRUSH)
+        # self.dev.enable(libevdev.EV_KEY.BTN_TOOL_PENCIL)
+        # self.dev.enable(libevdev.EV_KEY.BTN_TOOL_AIRBRUSH)
+        # self.dev.enable(libevdev.EV_KEY.BTN_TOUCH)
+        # self.dev.enable(libevdev.EV_KEY.BTN_STYLUS)
+        # self.dev.enable(libevdev.EV_KEY.BTN_STYLUS2)
+        # self.dev.enable(libevdev.EV_KEY.BTN_STYLUS3)
+        self.dev.enable(libevdev.EV_MSC.MSC_SERIAL)
+        self.dev.enable(libevdev.INPUT_PROP_DIRECT)
+
+        # a = InputAbsInfo(minimum=0, maximum=69920, resolution=200)
+        # self.dev.enable(libevdev.EV_ABS.ABS_X, data=a)
+        # a = InputAbsInfo(minimum=0, maximum=39980, resolution=200)
+        # self.dev.enable(libevdev.EV_ABS.ABS_Y, data=a)
+        a = InputAbsInfo(minimum=0, maximum=screen_x, resolution=100)
+        self.dev.enable(libevdev.EV_ABS.ABS_X, data=a)
+        a = InputAbsInfo(minimum=0, maximum=screen_y, resolution=100)
+        self.dev.enable(libevdev.EV_ABS.ABS_Y, data=a)
+        a = InputAbsInfo(minimum=-900, maximum=899, resolution=287)
+        self.dev.enable(libevdev.EV_ABS.ABS_Z, data=a)
+        a = InputAbsInfo(minimum=0, maximum=2047)
+        self.dev.enable(libevdev.EV_ABS.ABS_WHEEL, data=a)
+        a = InputAbsInfo(minimum=0, maximum=8196)
+        self.dev.enable(libevdev.EV_ABS.ABS_PRESSURE, data=a)
+        a = InputAbsInfo(minimum=0, maximum=15)
+        self.dev.enable(libevdev.EV_ABS.ABS_DISTANCE, data=a)
+        a = InputAbsInfo(minimum=-64, maximum=63, resolution=57)
+        self.dev.enable(libevdev.EV_ABS.ABS_TILT_X, data=a)
+        self.dev.enable(libevdev.EV_ABS.ABS_TILT_Y, data=a)
+        a = InputAbsInfo(minimum=0, maximum=0)
+        self.dev.enable(libevdev.EV_ABS.ABS_MISC, data=a)
+
+        # try:
+        #     uinput = self.dev.create_uinput_device()
+        #     print("New device at {} ({})".format(uinput.devnode, uinput.syspath))
+
+        #     # Sleep for a bit so udev, libinput, Xorg, Wayland, ... all have had
+        #     # a chance to see the device and initialize it. Otherwise the event
+        #     # will be sent by the kernel but nothing is ready to listen to the
+        #     # device yet.
+        #     time.sleep(1)
+
+        #     x, y = 3000, 5000
+
+        #     events = self.press(x, y)
+        #     uinput.send_events(events)
+        #     time.sleep(0.012)
+
+        #     for _ in range(5):
+        #         x += 1000
+        #         y += 1000
+        #         events = self.move(x, y)
+        #         uinput.send_events(events)
+        #         time.sleep(0.012)
+
+        #     events = self.release()
+        #     uinput.send_events(events)
+        #     time.sleep(0.012)
+        # except OSError as e:
+        #     print(e)
             
-    
-    def move(self, x, y, blobSize, sizeMax, sizeMin, screen_X):
-        if (blobSize > sizeMax):
-            blobSize = sizeMax
-        if (blobSize < sizeMin):
-            blobSize = sizeMin
-        
-        if x > screen_X:        # funktion um alles von rechts nach links zu klappen
-            # factor_X = screen_X - (x - screen_X)
-            factor = (30 / screen_X)*(screen_X - (x - screen_X))    # 30 == verschiebung
-        else:
-            factor = (30/screen_X)*x
-        
-        # pressure = (8191/15)*(blobSize - factor-sizeMin)
-        # pressure = 546.07*(blobSize - factor-sizeMin) # hier fehlt das inventieren der Blobsize
-        pressure = 546.07*(sizeMax + sizeMin - blobSize - factor) # 546 == 8191/15 == maxpressure / maxblobsize(from 0 to z)
-        # print(sizeMax + sizeMin - blobSize - factor)
-        # print(factor-blobSize)
-        if pressure < 0:
-            pressure = 0
-        # print(pressure)
-        # print()
-        
+    def press(self, x, y, tilt=(0, 0), pressure=15, distance=0):
+        z = 0
         self.uinput.send_events([
-            libevdev.InputEvent(libevdev.EV_ABS.ABS_X,
-                                value=x),
-            libevdev.InputEvent(libevdev.EV_ABS.ABS_Y,
-                                value=y),
-            libevdev.InputEvent(libevdev.EV_ABS.ABS_PRESSURE,
-                                value= int(pressure)),
-            libevdev.InputEvent(libevdev.EV_KEY.BTN_TOUCH,
-                                value=1),   # normal 1
-            libevdev.InputEvent(libevdev.EV_KEY.BTN_STYLUS,
-                                value=0),
-            libevdev.InputEvent(libevdev.EV_KEY.BTN_STYLUS2,
-                                value=0),
-            libevdev.InputEvent(libevdev.EV_KEY.BTN_TOOL_PEN,
-                                value=1),   # normal 1
-            libevdev.InputEvent(libevdev.EV_SYN.SYN_REPORT,
-                                value=0),
-            ])
-        
-    def press(self, x, y):
-        # print("Press!")
-        self.uinput.send_events([
-            # Pen close to device
-            libevdev.InputEvent(libevdev.EV_ABS.ABS_X,
-                                value=x),
-            libevdev.InputEvent(libevdev.EV_ABS.ABS_Y,
-                                value=y),
-            libevdev.InputEvent(libevdev.EV_KEY.BTN_TOOL_PEN,
-                                value=0),   #1
-            libevdev.InputEvent(libevdev.EV_KEY.BTN_TOUCH,
-                                value=0),   #1
-            libevdev.InputEvent(libevdev.EV_SYN.SYN_REPORT,
-                                value=0),
-        ])       
+            InputEvent(libevdev.EV_ABS.ABS_X, x),
+            InputEvent(libevdev.EV_ABS.ABS_Y, y),
+            InputEvent(libevdev.EV_ABS.ABS_Z, z),
+            # Note: wheel for pen/eraser must be 0
+            InputEvent(libevdev.EV_ABS.ABS_WHEEL, 0),
+            InputEvent(libevdev.EV_ABS.ABS_PRESSURE, pressure),
+            InputEvent(libevdev.EV_ABS.ABS_DISTANCE, distance),
+            InputEvent(libevdev.EV_ABS.ABS_TILT_X, tilt[0]),
+            InputEvent(libevdev.EV_ABS.ABS_TILT_Y, tilt[1]),
+            InputEvent(libevdev.EV_ABS.ABS_MISC, 2083),
+            InputEvent(libevdev.EV_MSC.MSC_SERIAL, 297797542),
+            # Change to BTN_TOOL_RUBBER for the eraser end
+            InputEvent(libevdev.EV_KEY.BTN_TOOL_PEN, 1),
+            InputEvent(libevdev.EV_SYN.SYN_REPORT, 0),
+        ])
+
 
     def release(self):
-        print("Release click.")
         self.uinput.send_events([
-            libevdev.InputEvent(libevdev.EV_KEY.BTN_TOUCH,
-                                value=0),
-            # Pen outside of the position
-            libevdev.InputEvent(libevdev.EV_KEY.BTN_TOOL_PEN,
-                                value=0),
-            libevdev.InputEvent(libevdev.EV_SYN.SYN_REPORT,
-                                value=0),
+            InputEvent(libevdev.EV_ABS.ABS_X, 0),
+            InputEvent(libevdev.EV_ABS.ABS_Y, 0),
+            InputEvent(libevdev.EV_ABS.ABS_Z, 0),
+            InputEvent(libevdev.EV_ABS.ABS_WHEEL, 0),
+            InputEvent(libevdev.EV_ABS.ABS_PRESSURE, 0),
+            InputEvent(libevdev.EV_ABS.ABS_DISTANCE, 0),
+            InputEvent(libevdev.EV_ABS.ABS_TILT_X, 0),
+            InputEvent(libevdev.EV_ABS.ABS_TILT_Y, 0),
+            InputEvent(libevdev.EV_ABS.ABS_MISC, 0),
+            InputEvent(libevdev.EV_MSC.MSC_SERIAL, 297797542),
+            InputEvent(libevdev.EV_KEY.BTN_TOOL_PEN, 0),
+            InputEvent(libevdev.EV_SYN.SYN_REPORT, 0),
+        ])
+
+
+    def move(self, x, y, tilt=(0, 0), pressure=15, distance=0):
+        z = 0
+        self.uinput.send_events([
+            InputEvent(libevdev.EV_ABS.ABS_X, x),
+            InputEvent(libevdev.EV_ABS.ABS_Y, y),
+            InputEvent(libevdev.EV_ABS.ABS_Z, z),
+            InputEvent(libevdev.EV_ABS.ABS_WHEEL, 0),
+            InputEvent(libevdev.EV_ABS.ABS_PRESSURE, pressure),
+            InputEvent(libevdev.EV_ABS.ABS_DISTANCE, distance),
+            InputEvent(libevdev.EV_ABS.ABS_TILT_X, tilt[0]),
+            InputEvent(libevdev.EV_ABS.ABS_TILT_Y, tilt[1]),
+            InputEvent(libevdev.EV_MSC.MSC_SERIAL, 297797542),
+            InputEvent(libevdev.EV_SYN.SYN_REPORT, 0),
         ])

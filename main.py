@@ -7,7 +7,7 @@ from module.optionmenue import OptionMenue
 from module.imageprocessing import ImageProcessing
 from module.paint import Paint
 # from module.sound import Sound
-from module.mouse import Mouse
+from module.mouse_old import Mouse
 
 global CONF
 global CONF_OLD
@@ -106,7 +106,7 @@ def getFPS():
 CONF = Config()
 CONF.LoadFromJSON()  # Load from config.conf file
 CONF_OLD = CONF.copy() # Backup conf
-MOUSE = Mouse()         # Create Objekt
+MOUSE = Mouse(CONF.SCREEN_X, CONF.SCREEN_Y)         # Create Objekt
 
 # Option Menue
 global OPTIONMENUE
@@ -142,9 +142,10 @@ try:
             lastTimeInput = False
             if CONF.PAINT_ENABLED:
                 lastPos = False
-            #else:
+            else:
                 # MOUSE.release(realX, realY)
-                #MOUSE.release()
+                MOUSE.release()
+                # MOUSE.press(0,0)
             spraying = False
         
         # Detect blobs.
@@ -170,7 +171,8 @@ try:
                 #     blobSizeMin = blobSize
                 orgx = int(p[0])
                 orgy = int(p[1])
-                newx = CONF.SCALE_X-orgx+CONF.BORDER_BUFFER-1
+                # newx = CONF.SCALE_X-orgx+CONF.BORDER_BUFFER-1
+                newx = CONF.SCALE_X-orgx-1
                 newy = orgy-CONF.BORDER_BUFFER
                 realX = int(newx*CONF.SCALE_FACTOR_X)
                 realY = int(newy*CONF.SCALE_FACTOR_Y)
@@ -191,28 +193,18 @@ try:
                             PAINT.createGrafittiLineBigger(lastPos[0], lastPos[1], realX, realY, blobSize)
                             # PAINT.Draw(realX, realY, blobSize)
                         lastPos = (realX, realY)
-                    #else:
-                        #if spraying == False:
-                            #MOUSE.press(realX, realY)
-                        #MOUSE.move(realX, realY, int(blobSize), int(blobSizeMax), int(blobSizeMin), Config.SCREEN_X/2)
-                        # MOUSE.press(realX, realY)
+                    else:
+                        # print(spraying)
+                        # MOUSE.move(realX, realY)
+                        if spraying == False:
+                            MOUSE.press(realX, realY, int(blobSize), int(blobSizeMax), int(blobSizeMin), Config.SCREEN_X/2)
+                        MOUSE.move(realX, realY)
+                        
                     spraying = True
                 counter += 1
             
             # SOUND.play()
             PAINT.Screen_Update()
-            
-            # If mouse is pressed and no blob is detected for 5 times then release mouse
-            # if(MOUSE_PRESSED > 0 and len(coordinates) == 0):
-            #     MOUSE_PRESSED +=1
-            #     if(MOUSE_PRESSED > 5):
-            #         print("release")
-            #         #mouse.release(int(x*CONF.SCALE_FACTOR_X), int(y*CONF.SCALE_FACTOR_Y))
-            #         #mouse.release(button='left')
-            #         #mouse.release('left')
-            #         #mouse.release(Button.left)
-            #         #mouse.mouseUp()
-            #         MOUSE_PRESSED = 0
-    
+                
 except KeyboardInterrupt:
     quitClean()
