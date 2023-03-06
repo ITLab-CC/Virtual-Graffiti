@@ -7,7 +7,7 @@ from module.optionmenue import OptionMenue
 from module.imageprocessing import ImageProcessing
 from module.paint import Paint
 # from module.sound import Sound
-from module.mouse_old import Mouse
+from module.mouse import Mouse
 
 global CONF
 global CONF_OLD
@@ -197,7 +197,8 @@ try:
                         # print(spraying)
                         # MOUSE.move(realX, realY)
                         if spraying == False:
-                            MOUSE.press(realX, realY, int(blobSize), int(blobSizeMax), int(blobSizeMin), Config.SCREEN_X/2)
+                            # MOUSE.press(realX, realY, (0,0), 15, 0, Config.SCREEN_X/2)
+                            MOUSE.press(realX, realY)
                         MOUSE.move(realX, realY)
                         
                     spraying = True
