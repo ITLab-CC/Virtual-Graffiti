@@ -190,17 +190,13 @@ class Config:
         shift_X = point_x
         if horizontal == 0:
             shift_X += 15
-            buffer_X -= self.BORDER_BUFFER
         elif horizontal == self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE -1:
             shift_X -= 15
-            buffer_X += self.BORDER_BUFFER
         shift_Y = point_y
         if vertical == 0:
             shift_Y += 15
-            buffer_Y -= self.BORDER_BUFFER
         elif vertical == self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE -1:
             shift_Y -= 15
-            buffer_Y += self.BORDER_BUFFER
         
         from_X = int(self.SCALE_X / self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE) * (horizontal)
         to_X = int(self.SCALE_X / self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE) * (horizontal + 1)
@@ -216,7 +212,6 @@ class Config:
         cv2.imshow("Calibrate", cal_imag)
         
         if (x <= to_X) and (x >= from_X) and (y <= to_Y) and (y >= from_Y):
-            # self.CALIBRATION_POINTS.append([x+buffer_X,y+buffer_Y])
             self.CALIBRATION_POINTS.append([x,y])
             self.Calibrate_Status = self.Calibrate_Status + 1
             self.Calibrate_Points(-2, -2)    # Update the drawd points
@@ -226,3 +221,4 @@ class Config:
         if self.Calibrate_Status > (self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE * self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE):
             self.SaveToJSON()
             cv2.destroyWindow("Calibrate")  
+            self.Calibrate_Status = 0
