@@ -72,15 +72,19 @@ def Undistort_img(img, mtx, dist, newcameramtx, gpu=False):
 def Warp_img(img, corners, scale_x, scale_y, boarder_buffer, gpu=False):
     # print(corners)
     
+    # top left
     corners[0][1] = corners[0][1]-boarder_buffer
     corners[0][0] = corners[0][0]-boarder_buffer
 
+    # top right
     corners[1][0] = corners[1][0]+boarder_buffer
     corners[1][1] = corners[1][1]-boarder_buffer
 
+    # bottem left
     corners[2][0] = corners[2][0]-boarder_buffer
     corners[2][1] = corners[2][1]+boarder_buffer
 
+    # bottem right
     corners[3][0] = corners[3][0]+boarder_buffer
     corners[3][1] = corners[3][1]+boarder_buffer
     
@@ -120,7 +124,7 @@ def Blur_img(img, blur, gpu=False):
         return cv2.blur(img, (blur,blur), cv2.BORDER_DEFAULT)
 
 # Detect blobs
-def Detect_blob(img, minArea = 100, gpu=False):
+def Detect_blob(img, boarder_buffer, minArea = 100, calibration_status=0, gpu=False):
     if gpu:
         hcd = cv2.cuda.createHoughCirclesDetector(1, 100, 120, 10, 5, 100, 1)
         coordinates = hcd.detect(img)
@@ -139,6 +143,12 @@ def Detect_blob(img, minArea = 100, gpu=False):
         detector = cv2.SimpleBlobDetector_create(params)
         keypoints = detector.detect(img) # keypoints
         coordinates = cv2.KeyPoint_convert(keypoints) # convert keypoints to coordinates
+        
+    # print("old:", coordinates)
+    if len(coordinates) > 0 and calibration_status == 0:
+        coordinates[0][0] = coordinates[0][0]-(boarder_buffer*2)
+        coordinates[0][1] = coordinates[0][1]-(boarder_buffer*2)
+    # print("new:", coordinates)
     return coordinates, keypoints
 
 # Write blob coordinates to img
@@ -266,7 +276,7 @@ class ImageProcessing():
                 blur = Blur_img(mask, self.Conf.BLUR, gpu)
 
                 #Detect blobs.
-                self.coordinates, keypoints = Detect_blob(blur, 50, gpu)
+                self.coordinates, keypoints = Detect_blob(blur, self.Conf.BORDER_BUFFER, 50, self.Conf.Calibrate_Status, gpu)
                 
                 # print(self.coordinates)
                 # print(keypoints)
@@ -307,6 +317,8 @@ class ImageProcessing():
                         count+=1
                     
                     img = Draw_blobs(img, keypoints, (255, 255, 255))
+                    if len(self.coordinates) > 0:
+                        img = cv2.circle(img, (int(self.coordinates[0][0]), int(self.coordinates[0][1])), radius=10, color=(136, 0, 21), thickness=-1)
                     
                     # show fps
                     fps = self.getFPS()

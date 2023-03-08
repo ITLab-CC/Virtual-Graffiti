@@ -172,8 +172,9 @@ try:
                 orgx = int(p[0])
                 orgy = int(p[1])
                 # newx = CONF.SCALE_X-orgx+CONF.BORDER_BUFFER-1
-                newx = CONF.SCALE_X-orgx-1
-                newy = orgy-CONF.BORDER_BUFFER
+                newx = CONF.SCALE_X-orgx
+                # newy = orgy-CONF.BORDER_BUFFER
+                newy = orgy
                 realX = int(newx*CONF.SCALE_FACTOR_X)
                 realY = int(newy*CONF.SCALE_FACTOR_Y)
 
