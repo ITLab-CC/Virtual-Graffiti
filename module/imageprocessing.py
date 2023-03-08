@@ -72,27 +72,13 @@ def Undistort_img(img, mtx, dist, newcameramtx, gpu=False):
 def Warp_img(img, corners, scale_x, scale_y, boarder_buffer, gpu=False):
     # print(corners)
     
-    corners[0][1] = corners[0][1]-boarder_buffer
-    corners[0][0] = corners[0][0]-boarder_buffer
-
-    corners[1][0] = corners[1][0]+boarder_buffer
-    corners[1][1] = corners[1][1]-boarder_buffer
-
-    corners[2][0] = corners[2][0]-boarder_buffer
-    corners[2][1] = corners[2][1]+boarder_buffer
-
-    corners[3][0] = corners[3][0]+boarder_buffer
-    corners[3][1] = corners[3][1]+boarder_buffer
-    
     pts1 = np.float32(corners)
     pts2 = np.float32([[0,0],[scale_x+boarder_buffer*2,0],[0,scale_y+boarder_buffer*2],[scale_x+boarder_buffer*2,scale_y+boarder_buffer*2]])
-    # pts2 = np.float32([[0,0],[scale_x,0],[0,scale_y],[scale_x,scale_y]])
     matrix = cv2.getPerspectiveTransform(pts1,pts2)
     if gpu: # gpu
         return cv2.cuda.warpPerspective(img,matrix,(scale_x+boarder_buffer*2,scale_y+boarder_buffer*2))
     else: # cpu
         return cv2.warpPerspective(img,matrix,(scale_x+boarder_buffer*2,scale_y+boarder_buffer*2))
-        # return cv2.warpPerspective(img,matrix,(scale_x,scale_y))
  
 # HSV mask
 def HSV_img(img, gpu=False):
@@ -120,7 +106,7 @@ def Blur_img(img, blur, gpu=False):
         return cv2.blur(img, (blur,blur), cv2.BORDER_DEFAULT)
 
 # Detect blobs
-def Detect_blob(img, minArea = 100, gpu=False):
+def Detect_blob(img, boarder_buffer, minArea = 100, calibration_status=0, gpu=False):
     if gpu:
         hcd = cv2.cuda.createHoughCirclesDetector(1, 100, 120, 10, 5, 100, 1)
         coordinates = hcd.detect(img)
@@ -139,6 +125,12 @@ def Detect_blob(img, minArea = 100, gpu=False):
         detector = cv2.SimpleBlobDetector_create(params)
         keypoints = detector.detect(img) # keypoints
         coordinates = cv2.KeyPoint_convert(keypoints) # convert keypoints to coordinates
+        
+    # print("old:", coordinates)
+    if len(coordinates) > 0 and calibration_status == 0:
+        coordinates[0][0] = coordinates[0][0]-(boarder_buffer*2)
+        coordinates[0][1] = coordinates[0][1]-(boarder_buffer*2)
+    # print("new:", coordinates)
     return coordinates, keypoints
 
 # Write blob coordinates to img
@@ -191,7 +183,9 @@ def Stack_img(scale,imgArray):
         ver = hor
     return ver
 
-
+# Draw Point
+def Draw_point(img, coordinates, radius=10, color=(136, 0, 21)):
+    return cv2.circle(img, (int(coordinates[0]), int(coordinates[1])), radius=radius, color=color, thickness=-1)
 
 
 class ImageProcessing():
@@ -241,21 +235,38 @@ class ImageProcessing():
                     img = cv2.cuda_GpuMat(img)  # Uploade img to GPU
 
                 img = Resize_img(img, self.Conf.SCALE_X, self.Conf.SCALE_Y, gpu) # Resize image
-                
+
                 #Warp image
                 if self.Conf.Calibrate_Status == 0:
-                    number_of_points = self.Conf.NUMBER_OF_CALIBRATION_POINTS_PER_LINE * self.Conf.NUMBER_OF_CALIBRATION_POINTS_PER_LINE # 16
-                    corners = np.empty([4, 2])
-                    corners = [
-                        self.Conf.CALIBRATION_POINTS[0].copy(),                                                       # 0
-                        self.Conf.CALIBRATION_POINTS[number_of_points - self.Conf.NUMBER_OF_CALIBRATION_POINTS_PER_LINE].copy(),  # 16-4=11
-                        self.Conf.CALIBRATION_POINTS[self.Conf.NUMBER_OF_CALIBRATION_POINTS_PER_LINE - 1].copy(),                 # 4-1=3
-                        self.Conf.CALIBRATION_POINTS[number_of_points-1].copy()                                       # 16-1=15
-                        ]
+                    # Undistort image
                     # if len(self.MX) == 0 or len(self.DIST) == 0 or len(self.NEWCAMERAMTX) == 0:
                         # self.MX, self.DIST, self.NEWCAMERAMTX = Calculate_Undistort(img, self.Conf.NUMBER_OF_CALIBRATION_POINTS_PER_LINE, self.Conf.CALIBRATION_POINTS)
                     # img = cv2.drawChessboardCorners(img, (self.Conf.NUMBER_OF_CALIBRATION_POINTS_PER_LINE,self.Conf.NUMBER_OF_CALIBRATION_POINTS_PER_LINE), np.array(self.Conf.CALIBRATION_POINTS).astype(np.float32), True)
                     # img = Undistort_img(img, self.MX, self.DIST, self.NEWCAMERAMTX, gpu)
+
+
+                    # This cofiguration will warp the image and also mirrors it!!!
+                    number_of_points = self.Conf.NUMBER_OF_CALIBRATION_POINTS_PER_LINE * self.Conf.NUMBER_OF_CALIBRATION_POINTS_PER_LINE # 16
+                    corners = np.empty([4, 2]) # Create empy array
+                    corners = [
+                        self.Conf.CALIBRATION_POINTS[0].copy(),                                                                     # 0         # Top left
+                        self.Conf.CALIBRATION_POINTS[number_of_points - self.Conf.NUMBER_OF_CALIBRATION_POINTS_PER_LINE].copy(),    # 16-4=11   # Top right
+                        self.Conf.CALIBRATION_POINTS[self.Conf.NUMBER_OF_CALIBRATION_POINTS_PER_LINE - 1].copy(),                   # 4-1=3     # Bottem left
+                        self.Conf.CALIBRATION_POINTS[number_of_points-1].copy()                                                     # 16-1=15   # Bottem right
+                        ]   # Get points
+                    # top left
+                    corners[0][1] = corners[0][1]+self.Conf.BORDER_BUFFER
+                    corners[0][0] = corners[0][0]-self.Conf.BORDER_BUFFER
+                    # top right
+                    corners[1][0] = corners[1][0]-self.Conf.BORDER_BUFFER
+                    corners[1][1] = corners[1][1]-self.Conf.BORDER_BUFFER
+                    # bottem left
+                    corners[2][0] = corners[2][0]+self.Conf.BORDER_BUFFER
+                    corners[2][1] = corners[2][1]+self.Conf.BORDER_BUFFER
+                    # bottem right
+                    corners[3][0] = corners[3][0]-self.Conf.BORDER_BUFFER
+                    corners[3][1] = corners[3][1]+self.Conf.BORDER_BUFFER
+
                     img = Warp_img(img, corners, self.Conf.SCALE_X, self.Conf.SCALE_Y, self.Conf.BORDER_BUFFER, gpu)
 
                 #HSV mask
@@ -266,10 +277,7 @@ class ImageProcessing():
                 blur = Blur_img(mask, self.Conf.BLUR, gpu)
 
                 #Detect blobs.
-                self.coordinates, keypoints = Detect_blob(blur, 50, gpu)
-                
-                # print(self.coordinates)
-                # print(keypoints)
+                self.coordinates, keypoints = Detect_blob(blur, self.Conf.BORDER_BUFFER, 50, self.Conf.Calibrate_Status, gpu)
                 
                 # If no blob detected continue
                 if len(self.coordinates) == 0 and self.Conf.DEBUG == False:
@@ -296,10 +304,8 @@ class ImageProcessing():
                     for p in self.coordinates:
                         orgx = int(p[0])
                         orgy = int(p[1])
-                        newx = self.Conf.SCALE_X-orgx+self.Conf.BORDER_BUFFER-1
-                        newy = orgy-self.Conf.BORDER_BUFFER
-                        realX = int(newx*self.Conf.SCALE_FACTOR_X)
-                        realY = int(newy*self.Conf.SCALE_FACTOR_Y)
+                        realX = int(orgx*self.Conf.SCALE_FACTOR_X)
+                        realY = int(orgy*self.Conf.SCALE_FACTOR_Y)
                         text = str(realX) + "|" + str(realY)
                         img = Draw_coordinates(img, orgx, orgy, text, (255, 255, 255))  # Draw coordinates
                         textblobsize = str(round(self.blobSizes[count], 2))
@@ -307,7 +313,15 @@ class ImageProcessing():
                         count+=1
                     
                     img = Draw_blobs(img, keypoints, (255, 255, 255))
-                    
+                    if len(self.coordinates) > 0:
+                        point = self.coordinates[0]
+                        img = Draw_point(img, point, 10, (136, 0, 21))
+
+                    # Draw all calibration points
+                    if self.Conf.Calibrate_Status > 0 and not gpu:
+                        for point in self.Conf.CALIBRATION_POINTS:
+                            img = Draw_point(img, point, 10, (0,0,255))
+
                     # show fps
                     fps = self.getFPS()
                     fpstext = "FPS: " + str(fps)
