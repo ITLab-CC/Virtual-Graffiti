@@ -43,11 +43,14 @@ class Mail:
             # get data
             files = os.listdir(path_from_file)
             if len(files) > 0 and "tmp" not in str(files):
+                save_folder = "./sendet_mails"
+                if not os.path.exists(save_folder):
+                    os.makedirs(save_folder)
+
                 print("sending mail...")
 
                 file_name = str(files[0])
                 receiver_email = Path(path_from_file + "/" + file_name).stem
-                save_folder = "./sendet_mails"
 
                 message = MIMEMultipart()
                 message["From"] = sender_email

@@ -145,7 +145,7 @@ try:
         MAIL.send_mail(CONF.MAIL_ENABLED, CONF.EMAIL_SENDER, CONF.EMAIL_PASSWORD, CONF.EMAIL_SMTP_SERVER, CONF.EMAIL_PATH_FROM_FILE)
         
         if lastTimeInput != False and time.time() - lastTimeInput > 0.1: # If no input for 0.5 seconds then stop drawing
-            # SOUND.stop()
+            SOUND.stop()
             lastTimeInput = False
             if CONF.PAINT_ENABLED:
                 lastPos = False
@@ -208,7 +208,7 @@ try:
                     spraying = True
                 counter += 1
             
-            # SOUND.play()
+            SOUND.play()
             PAINT.Screen_Update()
                 
 except KeyboardInterrupt:
