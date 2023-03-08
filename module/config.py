@@ -145,7 +145,9 @@ class Config:
     #Calibration mode
     Calibrate_Status = 0
     # self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE = 3 # must be >= 2
-    def Calibrate_Points(self, x=-1, y=-1):
+    def Calibrate_Points(self, orgx=-1, orgy=-1):
+        x = orgx
+        y = orgy
         if x == -1 and y == -1: # first call
             x = self.SCREEN_X
             y = self.SCREEN_Y
@@ -168,7 +170,6 @@ class Config:
                 self.Calibrate_Status = 0
                 return 
             
-            self.Calibrate_Status = 1
             self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE = result
             self.CALIBRATION_POINTS.clear()
             self.CALIBRATION_POINTSTION_POINTS = [] * self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE
@@ -212,7 +213,7 @@ class Config:
         cv2.imshow("Calibrate", cal_imag)
         
         if (x <= to_X) and (x >= from_X) and (y <= to_Y) and (y >= from_Y):
-            self.CALIBRATION_POINTS.append([x,y])
+            self.CALIBRATION_POINTS.append([orgx,orgy])
             self.Calibrate_Status = self.Calibrate_Status + 1
             self.Calibrate_Points(-2, -2)    # Update the drawd points
             if(self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE > 6):
