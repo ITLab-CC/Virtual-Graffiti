@@ -6,14 +6,13 @@ from module.config import Config
 from module.optionmenue import OptionMenue
 from module.imageprocessing import ImageProcessing
 from module.paint import Paint
-# from module.sound import Sound
+from module.sound import Sound
 from module.mouse import Mouse
+from module.mail import Mail
 
 global CONF
 global CONF_OLD
 global PAINT
-
-
 
 # Close/exit/end/dead/kill/destroy/terminate/stop/quit/bye lol
 def quitClean():
@@ -61,12 +60,15 @@ def keyinput(i):
         else:
             PAINT.Hide()
         CONF.SaveToJSON()
+    def mail_settings():
+        MAIL.set_conf()
     switcher={
             111:option_open, # key 'o'
             99:calibrate, # key 'c'
             100:debug, # key 'd'
             113:quit, # key 'q'
-            112:paint, # key 'p
+            112:paint, # key 'p'
+            101:mail_settings, # key 'e'
             }
     switcher.get(i,default)()
     
@@ -82,6 +84,7 @@ def Paint_key_init():
     PAINT.tkScreen.bind("d", tkInput)
     PAINT.tkScreen.bind("q", tkInput)
     PAINT.tkScreen.bind("p", tkInput)
+    PAINT.tkScreen.bind("e", tkInput)
 
 
 global old_Frame
@@ -117,12 +120,15 @@ PAINT = Paint(CONF.SPRAY_COLOUR, CONF.PAINT_ENABLED)
 Paint_key_init()
 
 # Sound
-# global SOUND
-# SOUND = Sound(CONF.SOUND_SPRAY_FILE)
+global SOUND
+SOUND = Sound(CONF.SOUND_SPRAY_FILE)
 
 global IMAGEPROCESSING
 IMAGEPROCESSING = ImageProcessing(CONF, 1)
 
+# Mail
+global MAIL 
+MAIL = Mail()
 # Some vars
 spraying = False
 lastPos = False
@@ -136,6 +142,7 @@ try:
     while Running:
         
         keyinput(cv2.waitKey(1) & 0xFF)
+        MAIL.send_mail(CONF.MAIL_ENABLED, CONF.EMAIL_SENDER, CONF.EMAIL_PASSWORD, CONF.EMAIL_SMTP_SERVER, CONF.EMAIL_PATH_FROM_FILE)
         
         if lastTimeInput != False and time.time() - lastTimeInput > 0.1: # If no input for 0.5 seconds then stop drawing
             # SOUND.stop()

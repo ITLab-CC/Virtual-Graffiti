@@ -53,6 +53,7 @@ class OptionMenue:
                 colourRgb[2] = cv2.getTrackbarPos("Blue",self.Name)
                 self.Conf.SPRAY_COLOUR = OptionMenue.rgb_to_hex((colourRgb[0], colourRgb[1], colourRgb[2]))
                 GPU_ENABLED = cv2.getTrackbarPos("Enable GPU",self.Name)
+                MAIL_ENABLED = cv2.getTrackbarPos("Enable Mail",self.Name)
                 if self.Conf.BLUR < 1:
                     cv2.setTrackbarPos("Blur",self.Name, 1)
                     self.Conf.BLUR = 1
@@ -96,6 +97,10 @@ class OptionMenue:
                 cv2.setTrackbarPos("Enable GPU",self.Name, 1)
             else:
                 cv2.setTrackbarPos("Enable GPU",self.Name, 0)
+            if self.Conf.MAIL_ENABLED == True:
+                cv2.setTrackbarPos("Enable Mail",self.Name, 1)
+            else:
+                cv2.setTrackbarPos("Enable Mail",self.Name, 0)
             cv2.setTrackbarPos("Reset",self.Name, 0)
             print("Reseted to: ", self.Conf.MASK_COLORS[0], self.Conf.MASK_COLORS[1], self.Conf.MASK_COLORS[2], self.Conf.MASK_COLORS[3], self.Conf.MASK_COLORS[4], self.Conf.MASK_COLORS[5], self.Conf.BLUR)
 
@@ -126,6 +131,10 @@ class OptionMenue:
                 cv2.createTrackbar("Enable GPU",self.Name,1,1, self.setTrackbarPos)
             else:
                 cv2.createTrackbar("Enable GPU",self.Name,0,1, self.setTrackbarPos)
+            if self.Conf.MAIL_ENABLED == True:
+                cv2.createTrackbar("Enable Mail",self.Name,1,1, self.setTrackbarPos)
+            else:
+                cv2.createTrackbar("Enable Mail",self.Name,0,1, self.setTrackbarPos)
             cv2.createTrackbar("Reset",self.Name,0,1, self.Button_Reset)
             self.start = False
             

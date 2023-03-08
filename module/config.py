@@ -14,6 +14,7 @@ class Config:
     DEBUG = True
     GPU_ENABLED = False
     PAINT_ENABLED = False
+    MAIL_ENABLED = False
     CONFIG_FILE="config.conf"
     SOUND_SPRAY_FILE="sounds/spray.mp3"
     SCREEN_X=1920
@@ -35,6 +36,10 @@ class Config:
     CV2_ALGORITHM_NUMBER=cv2.CAP_ANY
     MASK_LOWER = (MASK_COLORS[0],MASK_COLORS[2],MASK_COLORS[4], 0)
     MASK_UPPER = (MASK_COLORS[1],MASK_COLORS[3],MASK_COLORS[5], 0)
+    EMAIL_SENDER = "xxx@xxx.xxx"  # Replace with your own email address
+    EMAIL_PASSWORD = "xxx"  # Replace with your email password
+    EMAIL_SMTP_SERVER = "smtp.xxx.xxx"
+    EMAIL_PATH_FROM_FILE = "../Saved_files_graffiti"
     
     def autodetect(self):
         #Get screen size
@@ -74,6 +79,7 @@ class Config:
                 'DEBUG': self.DEBUG,
                 'GPU_ENABLED': self.GPU_ENABLED,
                 'PAINT_ENABLED' : self.PAINT_ENABLED,
+                'MAIL_ENABLED' : self.MAIL_ENABLED,
                 'SCREEN_X' : self.SCREEN_X,
                 'SCREEN_Y' : self.SCREEN_Y,
                 'CAMERA_X' : self.CAMERA_X,
@@ -88,7 +94,11 @@ class Config:
                 'MASK_COLORS' : self.MASK_COLORS,
                 'BLUR' : self.BLUR,
                 'BORDER_BUFFER' : self.BORDER_BUFFER,
-                'SPRAY_COLOUR' : self.SPRAY_COLOUR
+                'SPRAY_COLOUR' : self.SPRAY_COLOUR,
+                'EMAIL_SENDER' : self.EMAIL_SENDER,
+                'EMAIL_PASSWORD' : self.EMAIL_PASSWORD,
+                'EMAIL_SMTP_SERVER' : self.EMAIL_SMTP_SERVER,
+                'EMAIL_PATH_FROM_FILE' : self.EMAIL_PATH_FROM_FILE
             }
         }
         with open(self.CONFIG_FILE, 'w') as outfile:
@@ -107,6 +117,7 @@ class Config:
                 self.DEBUG = data['config']['DEBUG']
                 self.GPU_ENABLED = data['config']['GPU_ENABLED']
                 self.PAINT_ENABLED = data['config']['PAINT_ENABLED']
+                self.MAIL_ENABLED = data['config']['MAIL_ENABLED']
                 if self.DEBUG == "true":
                     self.DEBUG = True
                 if self.DEBUG == "false":
@@ -115,6 +126,10 @@ class Config:
                     self.PAINT_ENABLED = True
                 if self.PAINT_ENABLED == "false":
                     self.PAINT_ENABLED = False
+                if self.MAIL_ENABLED == "true":
+                    self.MAIL_ENABLED = True
+                if self.MAIL_ENABLED == "false":
+                    self.MAIL_ENABLED = False
                 self.SCREEN_X = data['config']['SCREEN_X']
                 self.SCREEN_Y = data['config']['SCREEN_Y']
                 self.CAMERA_X = data['config']['CAMERA_X']
@@ -134,6 +149,10 @@ class Config:
                 self.SPRAY_COLOUR = data['config']['SPRAY_COLOUR']
                 self.MASK_LOWER = (self.MASK_COLORS[0],self.MASK_COLORS[2],self.MASK_COLORS[4], 0)
                 self.MASK_UPPER = (self.MASK_COLORS[1],self.MASK_COLORS[3],self.MASK_COLORS[5], 0)
+                self.EMAIL_SENDER = data['config']['EMAIL_SENDER']
+                self.EMAIL_PASSWORD = data['config']['EMAIL_PASSWORD']
+                self.EMAIL_SMTP_SERVER = data['config']['EMAIL_SMTP_SERVER']
+                self.EMAIL_PATH_FROM_FILE = data['config']['EMAIL_PATH_FROM_FILE']
                 
                 if self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE * self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE != len(self.CALIBRATION_POINTS):
                     print("The config has a wrong format. Delete the file and a new one will be generated.")
