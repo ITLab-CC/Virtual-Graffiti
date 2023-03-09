@@ -16,7 +16,7 @@ class Config:
     PAINT_ENABLED = False
     MAIL_ENABLED = False
     CONFIG_FILE="config.conf"
-    SOUND_SPRAY_FILE="sounds/spray.mp3"
+    SOUND_SPRAY_FILE="./sounds/spray.mp3"
     SCREEN_X=1920
     SCREEN_Y=1080
     CAMERA_X=1920

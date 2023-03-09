@@ -121,7 +121,8 @@ Paint_key_init()
 
 # Sound
 global SOUND
-SOUND = Sound(CONF.SOUND_SPRAY_FILE)
+# SOUND = Sound(CONF.SOUND_SPRAY_FILE)
+SOUND = Sound("./sounds/spray.mp3")
 
 global IMAGEPROCESSING
 IMAGEPROCESSING = ImageProcessing(CONF, 1)
@@ -187,6 +188,7 @@ try:
                 elif OPTIONMENUE.isOpen() == False:
                     # Move mouse cursor to position
                     if spraying == False:
+                        SOUND.play()
                         if ((CONF.SCREEN_X-100) <= realX and (CONF.SCREEN_Y-100) <= realY):
                             CONF.DEBUG = True
                             CONF.SaveToJSON()
@@ -208,7 +210,6 @@ try:
                     spraying = True
                 counter += 1
             
-            SOUND.play()
             PAINT.Screen_Update()
                 
 except KeyboardInterrupt:

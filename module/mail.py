@@ -57,7 +57,7 @@ class Mail:
                 message["To"] = Path(path_from_file + "/" + file_name).stem
                 message["Subject"] = "Virutalles Graffiti"
 
-                body = "Dein gezeichtnes Graffiti."
+                body = "Dein gezeichtnes Graffiti. Nacht der Ausbildung, 10 März 2023 bei Entega"
                 message.attach(MIMEText(body, "plain"))
 
                 with open(path_from_file + "/" + file_name, "rb") as file:
