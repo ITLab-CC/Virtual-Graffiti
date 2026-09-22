@@ -1,82 +1,62 @@
 import cv2                   # OpenCV
-from threading import Thread # Multitreading
-import time                  # Mesure FPS
+from threading import Thread, Lock # Multithreading & synchronization
+import time                  # Measure FPS
 import sys
 
+# Relevant video capture backends for Linux / Cross-platform
 cv2_algorithms = (
-    (cv2.CAP_ANY, "CAP_ANY"),                   # Auto detect == 0
-    (cv2.CAP_VFW, "CAP_VFW"),                   # Video For Windows (platform native)
-    (cv2.CAP_V4L, "CAP_V4L"),                   # V4L/V4L2 capturing support via libv4l
-    (cv2.CAP_V4L2, "CAP_V4L2"),                 # Same as CAP_V4L
-    (cv2.CAP_FIREWIRE, "CAP_FIREWIRE"),         # IEEE 1394 drivers
-    (cv2.CAP_FIREWARE, "CAP_FIREWARE"),         # Same as CAP_FIREWIRE
-    (cv2.CAP_IEEE1394, "CAP_ANY"),              # Same as CAP_FIREWIRE
-    (cv2.CAP_DC1394, "CAP_ANY"),                # Same as CAP_FIREWIRE
-    (cv2.CAP_CMU1394, "CAP_CMU1394"),           # Same as CAP_FIREWIRE
-    (cv2.CAP_QT, "CAP_QT"),                     # QuickTime
-    (cv2.CAP_UNICAP, "CAP_UNICAP"),             # Unicap drivers
-    (cv2.CAP_DSHOW, "CAP_DSHOW"),               # DirectShow (via videoInput) 
-    (cv2.CAP_PVAPI, "CAP_PVAPI"),               # PvAPI, Prosilica GigE SDK
-    (cv2.CAP_OPENNI, "CAP_OPENNI"),             # OpenNI (for Kinect) 
-    (cv2.CAP_OPENNI_ASUS, "CAP_OPENNI_ASUS"),   # OpenNI (for Asus Xtion) 
-    (cv2.CAP_ANDROID, "CAP_ANDROID"),           # Android - not used. 
-    (cv2.CAP_XIAPI, "CAP_XIAPI"),               # XIMEA Camera API
-    (cv2.CAP_AVFOUNDATION, "CAP_AVFOUNDATION"), # AVFoundation framework for iOS (OS X Lion will have the same API)
-    (cv2.CAP_GIGANETIX, "CAP_GIGANETIX"),       # Smartek Giganetix GigEVisionSDK.
-    (cv2.CAP_MSMF, "CAP_MSMF"),                 # Microsoft Media Foundation (via videoInput) 
-    (cv2.CAP_WINRT, "CAP_WINRT"),               # Microsoft Windows Runtime using Media Foundation. 
-    (cv2.CAP_INTELPERC, "CAP_INTELPERC"),       # Intel Perceptual Computing SDK. 
-    (cv2.CAP_OPENNI2, "CAP_OPENNI2"),           # OpenNI2 (for Kinect) 
-    (cv2.CAP_OPENNI2_ASUS, "CAP_OPENNI2_ASUS"), # OpenNI2 (for Asus Xtion and Occipital Structure sensors
-    (cv2.CAP_GPHOTO2, "CAP_GPHOTO2"),           # gPhoto2 connection 
-    (cv2.CAP_GSTREAMER, "CAP_GSTREAMER"),       # GStreamer. 
-    (cv2.CAP_FFMPEG, "CAP_FFMPEG"),             # Open and record video file or stream using the FFMPEG library.
-    (cv2.CAP_IMAGES, "CAP_IMAGES"),             # OpenCV Image Sequence (e.g. img_%02d.jpg) 
-    (cv2.CAP_ARAVIS, "CAP_ARAVIS"),             # Aravis SDK. 
-    (cv2.CAP_OPENCV_MJPEG, "CAP_OPENCV_MJPEG"), # Built-in OpenCV MotionJPEG codec.
-    (cv2.CAP_INTEL_MFX, "CAP_CAP_INTEL_MFXNY"), # Intel MediaSDK. 
-    (cv2.CAP_XINE, "CAP_XINE")                   # XINE engine (Linux) 
+    (cv2.CAP_ANY, "CAP_ANY"),                   # Auto detect
+    (cv2.CAP_V4L2, "CAP_V4L2"),                 # V4L2 capturing (standard on Linux)
+    (cv2.CAP_GSTREAMER, "CAP_GSTREAMER"),       # GStreamer
+    (cv2.CAP_FFMPEG, "CAP_FFMPEG"),             # FFMPEG
 )
 
-def test_algorithm(algo, test_time):
-    cap = ThreadedCamera(720, 576, 0, algo[0])
+def test_algorithm(algo, test_time=0.5, src=0):
+    cap = ThreadedCamera(720, 576, fps=30, src=src, algorithm=algo[0])
     if not cap.Status():
         return (algo[0], algo[1], -1)
     average = 0
-    counter = 1
+    counter = 0
     start = time.time()
-    run = True
-    while run:
-        if time.time() - start > test_time:
-            print("Average FPS for algorithm {}: {}".format(algo[1], average/counter))
-            run = False
-            break
-        
+    while time.time() - start < test_time:
         img, fps = cap.grap_frame()
         if img is None:
+            time.sleep(0.01)
             continue
-        average += fps
-        counter += 1
+        if fps:
+            average += fps
+            counter += 1
+        time.sleep(0.005)
         
     cap.end()
-    return (algo[0], algo[1], (average / counter))
+    avg_fps = (average / counter) if counter > 0 else 0
+    print(f"Average FPS for algorithm {algo[1]}: {avg_fps:.1f}")
+    return (algo[0], algo[1], avg_fps)
 
-def find_cv2_algorithm(test_time = 5):
-    list = []
+def find_cv2_algorithm(test_time=0.5, src=0):
+    results = []
     for algo in cv2_algorithms:
-        list.append(test_algorithm(algo, test_time))
-    list = sorted(list, key = lambda x: float(x[2]), reverse=True)
-    # print(list)
-    return list
+        try:
+            res = test_algorithm(algo, test_time, src=src)
+            if res[2] > 0:
+                results.append(res)
+        except Exception:
+            continue
+    if not results:
+        return [(cv2.CAP_ANY, "CAP_ANY", 30.0)]
+    results = sorted(results, key=lambda x: float(x[2]), reverse=True)
+    return results
 
 def find_camera():
     index = 0
     arr = []
-    while True:
+    while index < 10:  # Check up to 10 video devices
         cap = cv2.VideoCapture(index)
-        if not cap.read()[0]:
+        if not cap.isOpened():
+            cap.release()
             break
-        else:
+        ret, _ = cap.read()
+        if ret:
             arr.append(index)
         cap.release()
         index += 1
@@ -85,35 +65,43 @@ def find_camera():
 # Capture picture parallel
 class ThreadedCamera(object):    
     def __init__(self, Cam_X, Cam_Y, fps, src=0, algorithm=cv2.CAP_ANY):
+        self.lock = Lock()
+        self.Running = False
+        self.status = False
+        self.frame = None
+        self.fps = 0
+        self.capture = None
         self.start(Cam_X, Cam_Y, fps, src, algorithm)
         
     def Status(self):
         return self.Running
 
-    def start(self, Cam_X, Cam_Y, fps, src=None, algorithm=cv2.CAP_ANY):
+    def start(self, Cam_X, Cam_Y, fps, src=0, algorithm=cv2.CAP_ANY):
+        if src is None:
+            src = 0
         try:
             self.capture = cv2.VideoCapture(src, algorithm)
-            # Test camera inpur src
             if self.capture is None or not self.capture.isOpened():
-                print("Camera src or algorythem is wrong")
+                print(f"Camera source {src} or algorithm {algorithm} is invalid")
                 self.Running = False
                 return
-        except:
-            print("Camera src or algorythem is wrong")
+        except Exception as e:
+            print(f"Failed to open camera: {e}")
             self.Running = False
             return
         
-        print("apiPreference (cv2 Backend): ", self.capture.getBackendName())
+        print("apiPreference (cv2 Backend):", self.capture.getBackendName())
         
         cv2.useOptimized()
         # Set img size of camera (x,y)
         self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, Cam_X)
         self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, Cam_Y)
         self.capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
-        self.capture.set(cv2.CAP_PROP_FPS, fps);
+        self.capture.set(cv2.CAP_PROP_FPS, fps)
         self.capture.set(cv2.CAP_PROP_BUFFERSIZE, 2)
         
-        self.lastTime = time.time() 
+        self.lastTime = time.time()
+        self.Running = True
         # Start frame retrieval thread
         self.thread = Thread(target=self.update, args=())
         self.thread.daemon = True
@@ -121,26 +109,30 @@ class ThreadedCamera(object):
         
     def end(self):
         self.Running = False
-        time.sleep(1)
-        self.capture.release()
+        if hasattr(self, 'thread') and self.thread.is_alive():
+            self.thread.join(timeout=1.0)
+        if self.capture and self.capture.isOpened():
+            self.capture.release()
         
-        
-    Running = True
     def update(self):
         while self.Running:
-            if self.capture.isOpened():
+            if self.capture and self.capture.isOpened():
                 newTime = time.time()
                 diff = newTime - self.lastTime
-                if diff == 0: # Prevent division by zero
-                    diff = 1
-                self.fps = 1 / diff
+                if diff <= 0:
+                    diff = 1e-4
+                calculated_fps = 1.0 / diff
                 self.lastTime = newTime
-                (self.status, self.frame) = self.capture.read()
+                ret, frame = self.capture.read()
+                with self.lock:
+                    self.status = ret
+                    self.frame = frame
+                    self.fps = calculated_fps
+            else:
+                time.sleep(0.01)
     
     def grap_frame(self):
-        try:
-            if self.status:
-                return self.frame, self.fps
-            return None, None
-        except:
+        with self.lock:
+            if self.status and self.frame is not None:
+                return self.frame.copy(), self.fps
             return None, None

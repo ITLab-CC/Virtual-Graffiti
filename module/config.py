@@ -8,7 +8,14 @@ from module.threadedcamera import find_camera
 from module.threadedcamera import find_cv2_algorithm
 import time
 import tkinter as tk
-from tkinter import simpledialog
+from tkinter import simpledialog, messagebox
+
+def _to_bool(val):
+    if isinstance(val, bool):
+        return val
+    if isinstance(val, str):
+        return val.strip().lower() in ("true", "1", "yes")
+    return bool(val)
 
 class Config:
     DEBUG = True
@@ -35,6 +42,14 @@ class Config:
     CV2_ALGORITHM_NUMBER=cv2.CAP_ANY
     MASK_LOWER = (MASK_COLORS[0],MASK_COLORS[2],MASK_COLORS[4], 0)
     MASK_UPPER = (MASK_COLORS[1],MASK_COLORS[3],MASK_COLORS[5], 0)
+    Calibrate_Status = 0
+
+    def __init__(self):
+        # Ensure mutable structures are per-instance
+        self.CALIBRATION_POINTS = [p.copy() for p in Config.CALIBRATION_POINTS]
+        self.MASK_COLORS = list(Config.MASK_COLORS)
+        self.MASK_LOWER = (self.MASK_COLORS[0], self.MASK_COLORS[2], self.MASK_COLORS[4], 0)
+        self.MASK_UPPER = (self.MASK_COLORS[1], self.MASK_COLORS[3], self.MASK_COLORS[5], 0)
     
     def autodetect(self):
         #Get screen size
@@ -48,24 +63,48 @@ class Config:
         
         #find camera
         devices = find_camera()
-        if not len(devices) == 0:
+        if len(devices) > 0:
             self.CAMERA_SRC=devices[0]
             
         # Find best algorithm for cv2
-        algo = find_cv2_algorithm(3)
-        if algo[0][2] > 0:
+        algo = find_cv2_algorithm(0.5)
+        if len(algo) > 0 and algo[0][2] > 0:
             self.CV2_ALGORITHM_NUMBER=algo[0][0]
+
+    def copy_from(self, other):
+        for attr, value in other.__dict__.items():
+            if isinstance(value, list):
+                setattr(self, attr, [item.copy() if isinstance(item, list) else item for item in value])
+            else:
+                setattr(self, attr, value)
             
     def copy(self, other=None):
-        if not(isinstance(other,Config)) or other==None:
-            other = Config()
-        else:
-            other = self
-        other.CALIBRATION_POINTS=self.CALIBRATION_POINTS.copy()
-        other.MASK_COLORS=self.MASK_COLORS.copy()
-        other.MASK_LOWER = (self.MASK_COLORS[0],self.MASK_COLORS[2],self.MASK_COLORS[4], 0)
-        other.MASK_UPPER = (self.MASK_COLORS[1],self.MASK_COLORS[3],self.MASK_COLORS[5], 0)
-        return other
+        target = Config() if other is None else other
+        target.copy_from(self)
+        target.DEBUG = self.DEBUG
+        target.GPU_ENABLED = self.GPU_ENABLED
+        target.PAINT_ENABLED = self.PAINT_ENABLED
+        target.SCREEN_X = self.SCREEN_X
+        target.SCREEN_Y = self.SCREEN_Y
+        target.CAMERA_X = self.CAMERA_X
+        target.CAMERA_Y = self.CAMERA_Y
+        target.SCALE_X = self.SCALE_X
+        target.SCALE_Y = self.SCALE_Y
+        target.SCALE_FACTOR_X = self.SCALE_FACTOR_X
+        target.SCALE_FACTOR_Y = self.SCALE_FACTOR_Y
+        target.CAMERA_SRC = self.CAMERA_SRC
+        target.CAMERA_FPS = self.CAMERA_FPS
+        target.CV2_ALGORITHM_NUMBER = self.CV2_ALGORITHM_NUMBER
+        target.NUMBER_OF_CALIBRATION_POINTS_PER_LINE = self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE
+        target.CALIBRATION_POINTS = [p.copy() for p in self.CALIBRATION_POINTS]
+        target.MASK_COLORS = list(self.MASK_COLORS)
+        target.BLUR = self.BLUR
+        target.BORDER_BUFFER = self.BORDER_BUFFER
+        target.SPRAY_COLOUR = self.SPRAY_COLOUR
+        target.MASK_LOWER = (self.MASK_COLORS[0], self.MASK_COLORS[2], self.MASK_COLORS[4], 0)
+        target.MASK_UPPER = (self.MASK_COLORS[1], self.MASK_COLORS[3], self.MASK_COLORS[5], 0)
+        target.Calibrate_Status = self.Calibrate_Status
+        return target
 
     #Save vars to config.conf file
     def SaveToJSON(self):
@@ -92,7 +131,7 @@ class Config:
             }
         }
         with open(self.CONFIG_FILE, 'w') as outfile:
-            json.dump(data, outfile)
+            json.dump(data, outfile, indent=4)
 
     #Load vars from config.conf file
     def LoadFromJSON(self):
@@ -104,43 +143,37 @@ class Config:
         try:
             with open(self.CONFIG_FILE) as json_file:
                 data = json.load(json_file)
-                self.DEBUG = data['config']['DEBUG']
-                self.GPU_ENABLED = data['config']['GPU_ENABLED']
-                self.PAINT_ENABLED = data['config']['PAINT_ENABLED']
-                if self.DEBUG == "true":
-                    self.DEBUG = True
-                if self.DEBUG == "false":
-                    self.DEBUG = False
-                if self.PAINT_ENABLED == "true":
-                    self.PAINT_ENABLED = True
-                if self.PAINT_ENABLED == "false":
-                    self.PAINT_ENABLED = False
-                self.SCREEN_X = data['config']['SCREEN_X']
-                self.SCREEN_Y = data['config']['SCREEN_Y']
-                self.CAMERA_X = data['config']['CAMERA_X']
-                self.CAMERA_Y = data['config']['CAMERA_Y']
-                self.SCALE_X = data['config']['SCALE_X']
-                self.SCALE_Y = data['config']['SCALE_Y']
-                self.CAMERA_SRC = data['config']['CAMERA_SRC']
-                self.CAMERA_FPS = data['config']['CAMERA_FPS']
-                self.CV2_ALGORITHM_NUMBER = data['config']['CV2_ALGORITHM_NUMBER']
-                self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE = data['config']['NUMBER_OF_CALIBRATION_POINTS_PER_LINE']
-                self.CALIBRATION_POINTS = data['config']['CALIBRATION_POINTS']
-                self.MASK_COLORS = data['config']['MASK_COLORS']
-                self.BLUR = data['config']['BLUR']
-                self.BORDER_BUFFER = data['config']['BORDER_BUFFER']
-                self.SCALE_FACTOR_X = self.SCREEN_X/self.SCALE_X
-                self.SCALE_FACTOR_Y = self.SCREEN_Y/self.SCALE_Y
-                self.SPRAY_COLOUR = data['config']['SPRAY_COLOUR']
-                self.MASK_LOWER = (self.MASK_COLORS[0],self.MASK_COLORS[2],self.MASK_COLORS[4], 0)
-                self.MASK_UPPER = (self.MASK_COLORS[1],self.MASK_COLORS[3],self.MASK_COLORS[5], 0)
+                cfg = data['config']
+                self.DEBUG = _to_bool(cfg.get('DEBUG', self.DEBUG))
+                self.GPU_ENABLED = _to_bool(cfg.get('GPU_ENABLED', self.GPU_ENABLED))
+                self.PAINT_ENABLED = _to_bool(cfg.get('PAINT_ENABLED', self.PAINT_ENABLED))
+                self.SCREEN_X = cfg.get('SCREEN_X', self.SCREEN_X)
+                self.SCREEN_Y = cfg.get('SCREEN_Y', self.SCREEN_Y)
+                self.CAMERA_X = cfg.get('CAMERA_X', self.CAMERA_X)
+                self.CAMERA_Y = cfg.get('CAMERA_Y', self.CAMERA_Y)
+                self.SCALE_X = cfg.get('SCALE_X', self.SCALE_X)
+                self.SCALE_Y = cfg.get('SCALE_Y', self.SCALE_Y)
+                self.CAMERA_SRC = cfg.get('CAMERA_SRC', self.CAMERA_SRC)
+                self.CAMERA_FPS = cfg.get('CAMERA_FPS', self.CAMERA_FPS)
+                self.CV2_ALGORITHM_NUMBER = cfg.get('CV2_ALGORITHM_NUMBER', self.CV2_ALGORITHM_NUMBER)
+                self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE = cfg.get('NUMBER_OF_CALIBRATION_POINTS_PER_LINE', self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE)
+                self.CALIBRATION_POINTS = cfg.get('CALIBRATION_POINTS', self.CALIBRATION_POINTS)
+                self.MASK_COLORS = cfg.get('MASK_COLORS', self.MASK_COLORS)
+                self.BLUR = cfg.get('BLUR', self.BLUR)
+                self.BORDER_BUFFER = cfg.get('BORDER_BUFFER', self.BORDER_BUFFER)
+                self.SCALE_FACTOR_X = self.SCREEN_X / self.SCALE_X if self.SCALE_X else 1
+                self.SCALE_FACTOR_Y = self.SCREEN_Y / self.SCALE_Y if self.SCALE_Y else 1
+                self.SPRAY_COLOUR = cfg.get('SPRAY_COLOUR', self.SPRAY_COLOUR)
+                self.MASK_LOWER = (self.MASK_COLORS[0], self.MASK_COLORS[2], self.MASK_COLORS[4], 0)
+                self.MASK_UPPER = (self.MASK_COLORS[1], self.MASK_COLORS[3], self.MASK_COLORS[5], 0)
                 
-                if self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE * self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE != len(self.CALIBRATION_POINTS):
-                    print("The config has a wrong format. Delete the file and a new one will be generated.")
-                    self = temp_old
+                expected_points = self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE * self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE
+                if expected_points != len(self.CALIBRATION_POINTS):
+                    print("The config has a wrong format. Resetting to defaults.")
+                    self.copy_from(temp_old)
         except Exception as e:
-            print("The config has a wrong format. Delete the file and a new one will be generated. Error: {}" .format(e))
-            self = temp_old
+            print(f"The config has a wrong format. Resetting to defaults. Error: {e}")
+            self.copy_from(temp_old)
     
     #Calibration mode
     Calibrate_Status = 0
@@ -158,11 +191,11 @@ class Config:
                 if result is None:
                     break
                 if not result.isdigit():
-                    tk.messagebox.showerror("Error", "Please enter a valid number.")
+                    messagebox.showerror("Error", "Please enter a valid number.")
                     continue
                 result = int(result)
                 if result < 2 or result > 10:
-                    tk.messagebox.showerror("Error", "Please enter a number between 2 and 10.")
+                    messagebox.showerror("Error", "Please enter a number between 2 and 10.")
                     continue
                 break
             root.destroy()
@@ -172,7 +205,6 @@ class Config:
             
             self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE = result
             self.CALIBRATION_POINTS.clear()
-            self.CALIBRATION_POINTSTION_POINTS = [] * self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE
             
         x = self.SCALE_X-x # mirror cordinate x
 
@@ -217,7 +249,7 @@ class Config:
             self.Calibrate_Status = self.Calibrate_Status + 1
             self.Calibrate_Points(-2, -2)    # Update the drawd points
             if(self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE > 6):
-                tk.messagebox.showerror("Info", "Press enter to continue!") # wait for enter
+                messagebox.showinfo("Info", "Press enter to continue!") # wait for enter
            
         if self.Calibrate_Status > (self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE * self.NUMBER_OF_CALIBRATION_POINTS_PER_LINE):
             self.SaveToJSON()
