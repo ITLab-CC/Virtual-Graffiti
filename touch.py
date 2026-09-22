@@ -1,8 +1,6 @@
-# https://unix.stackexchange.com/questions/508612/simulate-graphics-tablet-using-libevent
-
-
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# https://unix.stackexchange.com/questions/508612/simulate-graphics-tablet-using-libevent
 import sys
 import libevdev
 import time
@@ -79,23 +77,22 @@ def main(args):
             libevdev.InputEvent(libevdev.EV_SYN.SYN_REPORT,
                                 value=0),
         ])
-        print("Waiting 30s to let you:")
+        print("Waiting 5s to let you:")
         print("1) open Gimp")
         print("2) Go to 'Edit/Input device' and configure the device 'Tablet alone' to 'Screen'.")
         print("3) Save and close the pop up")
         print("4) Create a new file (Ctrl-N)")
-        print("5) Zoom and press 'tab' to have a drawing surface coverint most of the screen.")
+        print("5) Zoom and press 'tab' to have a drawing surface covering most of the screen.")
         print("6) Switch to brush using 'p' key.")
-        time.sleep(3)
+        time.sleep(5)
 
         pc = 0
         direc = +1
         already_pressed_one = False
         for i in range(250):
-            pc_ = pc/100
-            val_x = int(i*4+150)
-            val_y = int(i*4+150)
-            val_pres = int(i*55)
+            val_x = int(i * 4 + 150)
+            val_y = int(i * 4 + 150)
+            val_pres = min(8191, int(i * 55))
             print("Will send: x={}, y={}, press={} (pc={})".format(
                 val_x,
                 val_y,
@@ -132,7 +129,7 @@ def main(args):
                                         value=0),
                 ])                
                 already_pressed_one = True
-            if pc >= 100 or pc <=0 :
+            if pc >= 100 or pc <= 0:
                 print("Release click.")
                 uinput.send_events([
                     libevdev.InputEvent(libevdev.EV_KEY.BTN_TOUCH,
@@ -149,7 +146,7 @@ def main(args):
                 if pc <= 0:
                     pc = 0
                     direc = +1
-                time.sleep(5)
+                time.sleep(2)
                 print("Press!")
                 uinput.send_events([
                     # Pen close to device
@@ -161,16 +158,20 @@ def main(args):
                                         value=0),
                 ])
                 already_pressed_one = True
-            time.sleep(0.1)
+            time.sleep(0.05)
 
     except KeyboardInterrupt:
-        pass
+        print("\nAborted by user.")
+    except PermissionError:
+        print("Permission error: Access to /dev/uinput denied. Run with sudo or add udev rules for uinput.", file=sys.stderr)
+        sys.exit(1)
     except OSError as e:
-        print(e)
+        print(f"OS error: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 2:
-        print("Usage: {}")
-        sys.exit(1)
+    if len(sys.argv) > 1 and sys.argv[1] in ("-h", "--help"):
+        print(f"Usage: {sys.argv[0]}")
+        sys.exit(0)
     main(sys.argv)

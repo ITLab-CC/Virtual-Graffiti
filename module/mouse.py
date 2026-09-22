@@ -50,40 +50,24 @@ class Mouse:
         a = InputAbsInfo(minimum=0, maximum=0)
         self.dev.enable(libevdev.EV_ABS.ABS_MISC, data=a)
         
-        self.uinput = self.dev.create_uinput_device()
+        try:
+            self.uinput = self.dev.create_uinput_device()
+        except PermissionError:
+            print("Permission error: Access to /dev/uinput denied. Run with sudo or configure udev rules.", file=sys.stderr)
+            raise
+        except OSError as e:
+            print(f"Error creating uinput device: {e}", file=sys.stderr)
+            raise
 
-        # try:
-        #     uinput = self.dev.create_uinput_device()
-        #     print("New device at {} ({})".format(uinput.devnode, uinput.syspath))
+        self.lastx = 0
+        self.lasty = 0
+        self.lastpressure = 0
 
-        #     # Sleep for a bit so udev, libinput, Xorg, Wayland, ... all have had
-        #     # a chance to see the device and initialize it. Otherwise the event
-        #     # will be sent by the kernel but nothing is ready to listen to the
-        #     # device yet.
-        #     time.sleep(1)
-
-        #     x, y = 3000, 5000
-
-        #     events = self.press(x, y)
-        #     uinput.send_events(events)
-        #     time.sleep(0.012)
-
-        #     for _ in range(5):
-        #         x += 1000
-        #         y += 1000
-        #         events = self.move(x, y)
-        #         uinput.send_events(events)
-        #         time.sleep(0.012)
-
-        #     events = self.release()
-        #     uinput.send_events(events)
-        #     time.sleep(0.012)
-        # except OSError as e:
-        #     print(e)
-            
-    def press(self, x, y, tilt=(0, 0), pressure=8190    , distance=0, screen=0):
+    def press(self, x, y, tilt=(0, 0), pressure=8190, distance=0, screen=0):
         z = 0
-        print("Press")
+        self.lastx = x
+        self.lasty = y
+        self.lastpressure = pressure
         self.uinput.send_events([
             InputEvent(libevdev.EV_ABS.ABS_X, x),
             InputEvent(libevdev.EV_ABS.ABS_Y, y),
@@ -96,37 +80,26 @@ class Mouse:
             InputEvent(libevdev.EV_ABS.ABS_TILT_Y, tilt[1]),
             InputEvent(libevdev.EV_ABS.ABS_MISC, 2083),
             InputEvent(libevdev.EV_MSC.MSC_SERIAL, 297797542),
-            # Change to BTN_TOOL_RUBBER for the eraser end
+            InputEvent(libevdev.EV_KEY.BTN_TOUCH, 1),
             InputEvent(libevdev.EV_KEY.BTN_TOOL_PEN, 1),
             InputEvent(libevdev.EV_SYN.SYN_REPORT, 0),
         ])
 
-    lastx = 0
-    lasty = 0
-    lastpressure = 0
-    
     def release(self):
-        print("release2")
+        self.lastpressure = 0
         self.uinput.send_events([
-            InputEvent(libevdev.EV_ABS.ABS_X, 0),
-            InputEvent(libevdev.EV_ABS.ABS_Y, 0),
-            InputEvent(libevdev.EV_ABS.ABS_Z, 0),
-            InputEvent(libevdev.EV_ABS.ABS_WHEEL, 0),
             InputEvent(libevdev.EV_ABS.ABS_PRESSURE, 0),
             InputEvent(libevdev.EV_ABS.ABS_DISTANCE, 0),
             InputEvent(libevdev.EV_ABS.ABS_TILT_X, 0),
             InputEvent(libevdev.EV_ABS.ABS_TILT_Y, 0),
             InputEvent(libevdev.EV_ABS.ABS_MISC, 0),
             InputEvent(libevdev.EV_MSC.MSC_SERIAL, 297797542),
+            InputEvent(libevdev.EV_KEY.BTN_TOUCH, 0),
             InputEvent(libevdev.EV_KEY.BTN_TOOL_PEN, 0),
             InputEvent(libevdev.EV_SYN.SYN_REPORT, 0),
         ])
-        while self.lastpressure > 0:
-            self.move(self.lastx, self.lasty, (0,0), 0, False)
-            self.lastpressure = self.lastpressure - 1
 
-
-    def move(self, x, y, tilt=(0, 0), pressure=8191, anti = True, distance=0):
+    def move(self, x, y, tilt=(0, 0), pressure=8191, anti=True, distance=0):
         z = 0
         if anti:
             self.lastx = x
