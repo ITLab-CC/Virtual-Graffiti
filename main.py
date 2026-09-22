@@ -1,208 +1,169 @@
 import cv2                   # OpenCV
-import time                  # Mesure FPS
-from tkinter import *        # Drawing
+import time                  # Measure FPS
+import sys
 
 from module.config import Config
 from module.optionmenue import OptionMenue
 from module.imageprocessing import ImageProcessing
 from module.paint import Paint
-# from module.sound import Sound
+from module.sound import Sound
 from module.mouse import Mouse
 
-global CONF
-global CONF_OLD
-global PAINT
 
+class VirtualGraffitiApp:
+    def __init__(self):
+        self.running = False
+        self.conf = Config()
+        self.conf.LoadFromJSON()
+        self.conf_old = self.conf.copy()
 
+        try:
+            self.mouse = Mouse(self.conf.SCREEN_X, self.conf.SCREEN_Y)
+        except Exception as e:
+            print(f"Warning: Mouse/Tablet emulation unavailable: {e}")
+            self.mouse = None
 
-# Close/exit/end/dead/kill/destroy/terminate/stop/quit/bye lol
-def quitClean():
-    global Running
-    global IMAGEPROCESSING
-    Running = False
-    IMAGEPROCESSING.end()
-    PAINT.End()
-    cv2.destroyAllWindows()
-    print("Goodbye")
+        self.options_menu = OptionMenue(self.conf, self.conf_old, "Options")
+        self.paint = Paint(self.conf.SPRAY_COLOUR, self.conf.PAINT_ENABLED)
+        self.sound = Sound(self.conf.SOUND_SPRAY_FILE)
+        self.image_processing = ImageProcessing(self.conf, 1)
 
+        self._init_paint_keys()
 
+    def _init_paint_keys(self):
+        def on_tk_key(event):
+            self.handle_key(event.char.lower())
 
-#Switch case for key input
-# o = Option
-# c = Calibration
-# d = Debug
-# q = Quit
-def keyinput(i):
-    def default():
-        return
-    def quit():
-        quitClean()
-    def option_open():
-        global OPTIONMENUE
-        if OPTIONMENUE.isOpen():
-            OPTIONMENUE.Close()
-        else:
-            OPTIONMENUE.Open()
-    def calibrate():
-        if CONF.Calibrate_Status == 0:
-            CONF.Calibrate_Status = 1
-            CONF.Calibrate_Points()
-    def debug():
-        global CONF
-        CONF.DEBUG = not CONF.DEBUG
-        if CONF.DEBUG == False:
-            cv2.destroyAllWindows()
-        CONF.SaveToJSON()
-    def paint():
-        global CONF
-        CONF.PAINT_ENABLED = not CONF.PAINT_ENABLED
-        if CONF.PAINT_ENABLED:
-            PAINT.Show()
-        else:
-            PAINT.Hide()
-        CONF.SaveToJSON()
-    switcher={
-            111:option_open, # key 'o'
-            99:calibrate, # key 'c'
-            100:debug, # key 'd'
-            113:quit, # key 'q'
-            112:paint, # key 'p
-            }
-    switcher.get(i,default)()
-    
-def tkInput(event):
-    print("Key:", event.char)
-    keyinput(ord(event.char))
-    
-def Paint_key_init():
-    global PAINT
-    # Use keys when beeing in paint mode
-    PAINT.tkScreen.bind("o", tkInput)
-    PAINT.tkScreen.bind("c", tkInput)
-    PAINT.tkScreen.bind("d", tkInput)
-    PAINT.tkScreen.bind("q", tkInput)
-    PAINT.tkScreen.bind("p", tkInput)
+        for key in ('o', 'c', 'd', 'q', 'p', 'r'):
+            self.paint.tkScreen.bind(key, on_tk_key)
 
-
-global old_Frame
-global new_Frame
-old_Frame = time.time()
-new_Frame = time.time()
-def getFPS():
-    global old_Frame
-    global new_Frame
-    new_Frame = time.time()
-    fps = 1/(new_Frame-old_Frame)
-    old_Frame = new_Frame
-    return int(fps)
-
-
-
-#----------------------------------------------------------------#
-#Start
-#----------------------------------------------------------------#
-# global CONF
-# global CONF_OLD
-CONF = Config()
-CONF.LoadFromJSON()  # Load from config.conf file
-CONF_OLD = CONF.copy() # Backup conf
-MOUSE = Mouse(CONF.SCREEN_X, CONF.SCREEN_Y)         # Create Objekt
-
-# Option Menue
-global OPTIONMENUE
-OPTIONMENUE = OptionMenue(CONF, CONF_OLD, "Options")
-
-# global PAINT
-PAINT = Paint(CONF.SPRAY_COLOUR, CONF.PAINT_ENABLED)
-Paint_key_init()
-
-# Sound
-# global SOUND
-# SOUND = Sound(CONF.SOUND_SPRAY_FILE)
-
-global IMAGEPROCESSING
-IMAGEPROCESSING = ImageProcessing(CONF, 1)
-
-# Some vars
-spraying = False
-lastPos = False
-lastTimeInput = False
-blobSizeMax = 60
-blobSizeMin = 15
-# MOUSE_PRESSED = 0
-    
-try:
-    Running = True
-    while Running:
+    def handle_key(self, key):
+        if not key:
+            return
+        if isinstance(key, int):
+            key = chr(key & 0xFF).lower() if key != 255 else ""
         
-        keyinput(cv2.waitKey(1) & 0xFF)
-        
-        if lastTimeInput != False and time.time() - lastTimeInput > 0.1: # If no input for 0.5 seconds then stop drawing
-            # SOUND.stop()
-            lastTimeInput = False
-            if CONF.PAINT_ENABLED:
-                lastPos = False
+        if key == 'q':
+            self.stop()
+        elif key == 'o':
+            if self.options_menu.isOpen():
+                self.options_menu.Close()
             else:
-                # MOUSE.release(realX, realY)
-                MOUSE.release()
-                # MOUSE.press(0,0)
-            spraying = False
-        
-        # Detect blobs.
-        success, debug_img, coordinates, blobSizes = IMAGEPROCESSING.grap_coordinates()
-        if success == False:
-            continue
-        
-        # Show debug image
-        if CONF.DEBUG:
-            cv2.imshow('Debug', debug_img)
-            # print("FPS:" + str(getFPS()))
-        
-        # For each blob
-        if len(coordinates) != 0:
-            counter = 0
-            lastTimeInput = time.time()
-            for p in coordinates:
-                blobSize = blobSizes[counter]
-                # print(blobSize)
-                # if (blobSize > blobSizeMax) and (blobSize < 80):
-                #     blobSizeMax = blobSize
-                # if (blobSize < blobSizeMin) and (blobSize > 40):
-                #     blobSizeMin = blobSize
-                orgx = int(p[0])
-                orgy = int(p[1])
-                realX = int(orgx*CONF.SCALE_FACTOR_X)
-                realY = int(orgy*CONF.SCALE_FACTOR_Y)
+                self.options_menu.Open()
+        elif key == 'c':
+            if self.conf.Calibrate_Status == 0:
+                self.conf.Calibrate_Status = 1
+                self.conf.Calibrate_Points()
+        elif key == 'd':
+            self.conf.DEBUG = not self.conf.DEBUG
+            if not self.conf.DEBUG:
+                cv2.destroyAllWindows()
+            self.conf.SaveToJSON()
+        elif key == 'p':
+            self.conf.PAINT_ENABLED = not self.conf.PAINT_ENABLED
+            if self.conf.PAINT_ENABLED:
+                self.paint.Show()
+            else:
+                self.paint.Hide()
+            self.conf.SaveToJSON()
+        elif key == 'r':
+            if self.conf.PAINT_ENABLED:
+                self.paint.clear()
 
-                # If calibration mode is enabled
-                if CONF.Calibrate_Status > 0:
-                    CONF.Calibrate_Points(orgx, orgy)
-                elif OPTIONMENUE.isOpen() == False:
-                    # Move mouse cursor to position
-                    if spraying == False:
-                        if ((CONF.SCREEN_X-100) <= realX and (CONF.SCREEN_Y-100) <= realY):
-                            CONF.DEBUG = True
-                            CONF.SaveToJSON()
-                            continue
-                    if CONF.PAINT_ENABLED:
-                        if lastPos != False:
-                            PAINT.createGrafittiLine(lastPos[0], lastPos[1], realX, realY, blobSize)
-                            PAINT.createGrafittiLineBigger(lastPos[0], lastPos[1], realX, realY, blobSize)
-                            # PAINT.Draw(realX, realY, blobSize)
-                        lastPos = (realX, realY)
-                    else:
-                        # print(spraying)
-                        # MOUSE.move(realX, realY)
-                        if spraying == False:
-                            # MOUSE.press(realX, realY, (0,0), 15, 0, Config.SCREEN_X/2)
-                            MOUSE.press(realX, realY)
-                        MOUSE.move(realX, realY)
-                        
-                    spraying = True
-                counter += 1
-            
-            # SOUND.play()
-            PAINT.Screen_Update()
-                
-except KeyboardInterrupt:
-    quitClean()
+    def stop(self):
+        if not self.running and not hasattr(self, '_stopped'):
+            return
+        self.running = False
+        self._stopped = True
+        print("Shutting down cleanly...")
+        if hasattr(self, 'sound') and self.sound:
+            self.sound.stop()
+        if hasattr(self, 'mouse') and self.mouse:
+            try:
+                self.mouse.release()
+            except Exception:
+                pass
+        if hasattr(self, 'image_processing'):
+            self.image_processing.end()
+        if hasattr(self, 'paint'):
+            self.paint.End()
+        cv2.destroyAllWindows()
+        print("Goodbye!")
+
+    def run(self):
+        self.running = True
+        spraying = False
+        last_pos = None
+        last_time_input = None
+
+        try:
+            while self.running:
+                # Check for OpenCV keyboard input
+                k = cv2.waitKey(1)
+                if k != -1:
+                    self.handle_key(k)
+
+                # Stop spraying if no input received for > 0.1s
+                if last_time_input is not None and (time.time() - last_time_input > 0.1):
+                    last_time_input = None
+                    last_pos = None
+                    if spraying:
+                        if self.mouse:
+                            self.mouse.release()
+                        self.sound.stop()
+                        spraying = False
+
+                success, debug_img, coordinates, blob_sizes = self.image_processing.grap_coordinates()
+                if not success:
+                    if self.conf.PAINT_ENABLED:
+                        self.paint.Screen_Update()
+                    continue
+
+                if self.conf.DEBUG and debug_img is not None:
+                    cv2.imshow('Debug', debug_img)
+
+                if coordinates:
+                    last_time_input = time.time()
+                    for idx, coord in enumerate(coordinates):
+                        blob_size = blob_sizes[idx] if idx < len(blob_sizes) else 50
+                        orgx = int(coord[0])
+                        orgy = int(coord[1])
+                        real_x = int(orgx * self.conf.SCALE_FACTOR_X)
+                        real_y = int(orgy * self.conf.SCALE_FACTOR_Y)
+
+                        if self.conf.Calibrate_Status > 0:
+                            self.conf.Calibrate_Points(orgx, orgy)
+                        elif not self.options_menu.isOpen():
+                            # Bottom right corner toggles debug
+                            if not spraying and (real_x >= self.conf.SCREEN_X - 100) and (real_y >= self.conf.SCREEN_Y - 100):
+                                self.conf.DEBUG = True
+                                self.conf.SaveToJSON()
+                                continue
+
+                            if self.conf.PAINT_ENABLED:
+                                if last_pos is not None:
+                                    self.paint.createGrafittiLine(last_pos[0], last_pos[1], real_x, real_y, blob_size)
+                                    self.paint.createGrafittiLineBigger(last_pos[0], last_pos[1], real_x, real_y, blob_size)
+                                last_pos = (real_x, real_y)
+                            else:
+                                if self.mouse:
+                                    if not spraying:
+                                        self.mouse.press(real_x, real_y)
+                                    self.mouse.move(real_x, real_y)
+
+                            if not spraying:
+                                self.sound.play()
+                                spraying = True
+
+                    if self.conf.PAINT_ENABLED:
+                        self.paint.Screen_Update()
+
+        except KeyboardInterrupt:
+            pass
+        finally:
+            self.stop()
+
+
+if __name__ == "__main__":
+    app = VirtualGraffitiApp()
+    app.run()
